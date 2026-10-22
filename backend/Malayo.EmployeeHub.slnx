@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Malayo.EmployeeHub.Api/Malayo.EmployeeHub.Api.csproj" />
+  </Folder>
+</Solution>

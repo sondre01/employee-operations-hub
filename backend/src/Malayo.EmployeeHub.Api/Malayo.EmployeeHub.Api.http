@@ -1,0 +1,6 @@
+@Malayo.EmployeeHub.Api_HostAddress = http://localhost:5183
+
+GET {{Malayo.EmployeeHub.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
