@@ -1,5 +1,10 @@
 // Pure, vanilla fetch wrapper for API communication
-const API_BASE = '/api';
+// If running through Vite or Docker reverse proxy, '/api' is used.
+// If running statically via VS Code Live Server on port 5500 without a proxy, it falls back directly to http://localhost:5000/api.
+const API_BASE = 
+  (typeof window !== 'undefined' && window.location.port === '5500' && !import.meta.env.DEV)
+    ? 'http://localhost:5000/api'
+    : '/api';
 
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;

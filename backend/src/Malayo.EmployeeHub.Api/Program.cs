@@ -28,12 +28,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// 4. Configure CORS for Frontend Development
+// 4. Configure CORS for Frontend Development (Supports Vite, Docker, and VS Code Go Live on port 5500)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000")
+        policy.SetIsOriginAllowed(origin => new Uri(origin).Host is "localhost" or "127.0.0.1")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
