@@ -18,6 +18,9 @@ yarn-error.log*
 *.env
 *.env.local
 pgdata/
+*.db
+*.db-shm
+*.db-wal
 
 # OS
 .DS_Store

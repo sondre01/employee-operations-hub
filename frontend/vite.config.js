@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  base: './', // Enables static serving via Live Server (Go Live)
   server: {
-    port: 5500, // Synced to Go Live Server default port 5500
-    host: true, // Listen on all local IP addresses (127.0.0.1, localhost)
+    port: 5173,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

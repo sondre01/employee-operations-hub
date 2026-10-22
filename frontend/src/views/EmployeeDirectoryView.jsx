@@ -119,7 +119,7 @@ export default function EmployeeDirectoryView() {
     <section>
       <h2>Employee Directory & Outstaffing Roster</h2>
       <p>
-        Tracks internal operations talent and Danish client-dedicated engineers in Manila.
+        Tracks internal operations talent and client-dedicated engineers across client organizations.
       </p>
 
       {/* Filter Bar */}
@@ -134,7 +134,7 @@ export default function EmployeeDirectoryView() {
           >
             <option value="">All Types</option>
             <option value="InternalCore">Internal Core (Ops / IT / HR)</option>
-            <option value="ClientDedicated">Client Dedicated (Danish Accounts)</option>
+            <option value="ClientDedicated">Client Dedicated (External Client Accounts)</option>
           </select>
           {' | '}
 
@@ -146,7 +146,7 @@ export default function EmployeeDirectoryView() {
           >
             <option value="">All Roles</option>
             <option value="AdminHr">Admin / HR</option>
-            <option value="DanishClientLead">Danish Client Lead</option>
+            <option value="DanishClientLead">Client Lead</option>
             <option value="Developer">Developer</option>
           </select>
           {' | '}
@@ -155,7 +155,7 @@ export default function EmployeeDirectoryView() {
           <input
             id="clientSearch"
             type="text"
-            placeholder="e.g. Kobenhavn Tech"
+            placeholder="e.g. Acme Solutions"
             value={clientSearch}
             onChange={(e) => setClientSearch(e.target.value)}
           />
@@ -182,7 +182,7 @@ export default function EmployeeDirectoryView() {
               <th>Work Email</th>
               <th>Job Title</th>
               <th>Employment Type</th>
-              <th>Assigned Danish Client</th>
+              <th>Assigned Client Organization</th>
               <th>Primary Tech Stack</th>
               <th>Assigned Hardware</th>
               <th>Role</th>
@@ -204,7 +204,7 @@ export default function EmployeeDirectoryView() {
                   <td>
                     {emp.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}
                   </td>
-                  <td>{emp.clientName || 'Malayo Hub (Internal)'}</td>
+                  <td>{emp.clientName || 'Internal Core Operations'}</td>
                   <td>{emp.primaryTechStack || 'N/A'}</td>
                   <td>{emp.assignedHardwareCount} item(s)</td>
                   <td>{emp.role}</td>

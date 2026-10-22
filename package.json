@@ -3,8 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "start:backend": "dotnet run --project backend/src/Malayo.EmployeeHub.Api",
+    "start:backend": "dotnet run --project backend/src/EmployeeHub.Api --launch-profile http",
     "start:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
     "build:frontend": "npm --prefix frontend run build"
   }
 }

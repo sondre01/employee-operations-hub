@@ -2,7 +2,7 @@
 // If running through Vite or Docker reverse proxy, '/api' is used.
 // If running statically via VS Code Live Server on port 5500 without a proxy, it falls back directly to http://localhost:5000/api.
 const API_BASE = 
-  (typeof window !== 'undefined' && window.location.port === '5500' && !import.meta.env.DEV)
+  (typeof window !== 'undefined' && !import.meta.env.DEV && window.location.port !== '8080')
     ? 'http://localhost:5000/api'
     : '/api';
 
