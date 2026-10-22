@@ -56,7 +56,6 @@ function HubShell() {
           >
             1. Employee Directory & Profiles
           </button>
-          {' | '}
           <button
             type="button"
             onClick={() => setActiveTab('hardware')}
@@ -64,7 +63,6 @@ function HubShell() {
           >
             2. Hardware Custody
           </button>
-          {' | '}
           <button
             type="button"
             onClick={() => setActiveTab('servicedesk')}
@@ -72,7 +70,6 @@ function HubShell() {
           >
             3. Operational Service Desk
           </button>
-          {' | '}
           <button
             type="button"
             onClick={() => setActiveTab('calendar')}
@@ -80,7 +77,6 @@ function HubShell() {
           >
             4. Dual Calendar (PH / DK)
           </button>
-          {' | '}
           <button
             type="button"
             onClick={() => setActiveTab('policies')}

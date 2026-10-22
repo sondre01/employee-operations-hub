@@ -29,6 +29,7 @@ services:
       - "5000:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - DatabaseProvider=PostgreSql
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=malayo_hub;Username=postgres;Password=postgres
     depends_on:
       db:

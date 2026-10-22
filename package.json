@@ -1,0 +1,10 @@
+{
+  "name": "proposal-employee-hub",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start:backend": "dotnet run --project backend/src/Malayo.EmployeeHub.Api",
+    "start:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build"
+  }
+}

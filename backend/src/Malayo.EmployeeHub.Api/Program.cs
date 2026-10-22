@@ -6,12 +6,23 @@ using Malayo.EmployeeHub.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configure EF Core with PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Host=localhost;Port=5432;Database=malayo_hub;Username=postgres;Password=postgres";
+// 1. Configure EF Core (Auto-selects SQLite for instant local dev, or PostgreSQL when in Docker/configured)
+var dbProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
+var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+if (dbProvider.Equals("PostgreSql", StringComparison.OrdinalIgnoreCase))
+{
+    var connectionString = postgresConn ?? "Host=localhost;Port=5432;Database=malayo_hub;Username=postgres;Password=postgres";
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+else
+{
+    // Frictionless local SQLite database (zero local database setup required)
+    var sqliteConn = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=malayo_hub.db";
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite(sqliteConn));
+}
 
 // 2. Register Business Logic Services
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();

@@ -8,8 +8,15 @@ public static class DbInitializer
 {
     public static async Task InitializeAsync(AppDbContext context)
     {
-        // Apply migrations automatically
-        await context.Database.MigrateAsync();
+        // Apply migrations for PostgreSQL or EnsureCreated for local SQLite
+        if (context.Database.IsNpgsql())
+        {
+            await context.Database.MigrateAsync();
+        }
+        else
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
 
         if (await context.Employees.AnyAsync())
         {
