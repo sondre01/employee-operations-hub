@@ -13,7 +13,10 @@ public record EmployeeDto(
     string PrimaryTechStack,
     bool IsActive,
     DateTime CreatedAtUtc,
-    int AssignedHardwareCount
+    int AssignedHardwareCount,
+    string FirstName = "",
+    string MiddleName = "",
+    string LastName = ""
 );
 
 public record EmployeeDetailDto(
@@ -28,26 +31,35 @@ public record EmployeeDetailDto(
     bool IsActive,
     DateTime CreatedAtUtc,
     List<HardwareItemDto> HardwareItems,
-    List<TicketDto> RecentTickets
+    List<TicketDto> RecentTickets,
+    string FirstName = "",
+    string MiddleName = "",
+    string LastName = ""
 );
 
 public record CreateEmployeeDto(
-    string FullName,
+    string? FirstName,
+    string? MiddleName,
+    string? LastName,
+    string? FullName,
     string WorkEmail,
     string JobTitle,
     EmploymentType EmploymentType,
     UserRole Role,
     string? ClientName,
-    string PrimaryTechStack
+    string? PrimaryTechStack
 );
 
 public record UpdateEmployeeDto(
-    string FullName,
+    string? FirstName,
+    string? MiddleName,
+    string? LastName,
+    string? FullName,
     string WorkEmail,
     string JobTitle,
     EmploymentType EmploymentType,
     UserRole Role,
     string? ClientName,
-    string PrimaryTechStack,
+    string? PrimaryTechStack,
     bool IsActive
 );

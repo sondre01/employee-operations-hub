@@ -1,9 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Users,
+  Search,
+  Filter,
+  UserPlus,
+  Eye,
+  Trash2,
+  CheckCircle2,
+  Laptop,
+  Ticket,
+  Building2,
+  X,
+  Send,
+  ArrowLeft,
+  Briefcase
+} from 'lucide-react';
 
 export default function EmployeeDirectoryView() {
-  const { currentPersona } = useAuth();
+  const { currentPersona, currentUser } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,7 +36,9 @@ export default function EmployeeDirectoryView() {
 
   // New Employee Form State
   const [formData, setFormData] = useState({
-    fullName: '',
+    lastName: '',
+    firstName: '',
+    middleName: '',
     workEmail: '',
     jobTitle: '',
     employmentType: 'ClientDedicated',
@@ -28,7 +47,6 @@ export default function EmployeeDirectoryView() {
     primaryTechStack: '',
   });
   const [formSuccess, setFormSuccess] = useState(null);
-
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'detail' | 'onboard'
 
   const fetchEmployees = async () => {
@@ -94,13 +112,19 @@ export default function EmployeeDirectoryView() {
     setError(null);
     setFormSuccess(null);
     try {
+      const computedFullName = [formData.firstName, formData.middleName, formData.lastName].filter(Boolean).join(' ');
       await apiRequest('/employees', {
         method: 'POST',
-        body: formData,
+        body: {
+          ...formData,
+          fullName: computedFullName
+        },
       });
-      setFormSuccess(`Successfully onboarded ${formData.fullName}`);
+      setFormSuccess(`Successfully onboarded ${computedFullName}`);
       setFormData({
-        fullName: '',
+        lastName: '',
+        firstName: '',
+        middleName: '',
         workEmail: '',
         jobTitle: '',
         employmentType: 'ClientDedicated',
@@ -115,396 +139,477 @@ export default function EmployeeDirectoryView() {
     }
   };
 
-  const isDanishLead = currentPersona.role === 'DanishClientLead';
-  const isAdmin = currentPersona.role === 'AdminHr';
+  const isAdmin = currentPersona?.role === 'AdminHr' || currentUser?.ticketingRole === 'SuperAdmin';
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <h2 style={{ margin: '0 0 10px 0' }}>Employee Directory &amp; Outstaffing Roster</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <Users className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Staff Directory &amp; Workforce Roster
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Workforce roster across Internal Core operations and Dedicated Client delivery teams.
+          </p>
+        </div>
 
-        {/* Sub-tabs to eliminate vertical scrolling */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('roster')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'roster' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'roster' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'roster' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            👥 Outstaffing Roster ({employees.length})
-          </button>
-
-          {selectedEmployee && (
+        {/* Tab Controls */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
             <button
               type="button"
-              onClick={() => setActiveTab('detail')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: activeTab === 'detail' ? 600 : 400,
-                border: 'none',
-                background: 'none',
-                borderBottom: activeTab === 'detail' ? '2px solid #0366d6' : '2px solid transparent',
-                color: activeTab === 'detail' ? '#0366d6' : '#586069',
-                cursor: 'pointer'
-              }}
+              onClick={() => setActiveTab('roster')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'roster'
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
             >
-              🔍 Profile: {selectedEmployee.fullName}
+              Roster ({employees.length})
             </button>
-          )}
-
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('onboard')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: activeTab === 'onboard' ? 600 : 400,
-                border: 'none',
-                background: 'none',
-                borderBottom: activeTab === 'onboard' ? '2px solid #0366d6' : '2px solid transparent',
-                color: activeTab === 'onboard' ? '#0366d6' : '#586069',
-                cursor: 'pointer'
-              }}
-            >
-              ➕ Onboard New Employee
-            </button>
-          )}
+            {selectedEmployee && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('detail')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'detail'
+                    ? 'bg-[#13264C] text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                Profile: {selectedEmployee.fullName.split(' ')[0]}
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('onboard')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'onboard'
+                    ? 'bg-[#13264C] text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5 text-[#D61766]" />
+                <span>Onboard Staff</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      {/* Success Notification */}
+      <AnimatePresence>
         {formSuccess && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{formSuccess}</span>
-            <button type="button" onClick={() => setFormSuccess(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#166534', fontWeight: 600 }}>✕</button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{formSuccess}</span>
+            </div>
+            <button type="button" onClick={() => setFormSuccess(null)} className="cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Tab 1: Directory Roster & Filter */}
-        {activeTab === 'roster' && (
-          <div>
-            <fieldset style={{ marginBottom: '16px' }}>
-              <legend>Filters &amp; Search</legend>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-                <div>
-                  <label htmlFor="typeFilter">Type: </label>
-                  <select
-                    id="typeFilter"
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                  >
-                    <option value="">All Types</option>
-                    <option value="InternalCore">Internal Core (Ops / IT / HR)</option>
-                    <option value="ClientDedicated">Client Dedicated (External)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="roleFilter">Role: </label>
-                  <select
-                    id="roleFilter"
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                  >
-                    <option value="">All Roles</option>
-                    <option value="AdminHr">Admin / HR</option>
-                    <option value="DanishClientLead">Client Lead</option>
-                    <option value="Developer">Developer</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="clientSearch">Client: </label>
-                  <input
-                    id="clientSearch"
-                    type="text"
-                    placeholder="e.g. Acme Solutions"
-                    value={clientSearch}
-                    onChange={(e) => setClientSearch(e.target.value)}
-                  />
-                </div>
-
-                <button type="button" onClick={() => { setTypeFilter(''); setRoleFilter(''); setClientSearch(''); }}>
-                  Reset Filters
-                </button>
+      {/* TAB 1: Directory Roster & Filter */}
+      {activeTab === 'roster' && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
+          {/* Filters Bar */}
+          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="relative w-48 sm:w-60">
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Filter client..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] text-zinc-900 font-medium"
+                />
               </div>
-            </fieldset>
 
-            {loading && <p>Loading employee directory...</p>}
-            {error && <p><strong>Error:</strong> {error}</p>}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl font-medium text-zinc-800 focus:outline-none focus:border-[#13264C]"
+              >
+                <option value="">All Types</option>
+                <option value="InternalCore">Internal Core Staff</option>
+                <option value="ClientDedicated">Client Dedicated</option>
+              </select>
 
-            {!loading && (
-              <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
-                <thead>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl font-medium text-zinc-800 focus:outline-none focus:border-[#13264C]"
+              >
+                <option value="">All Roles</option>
+                <option value="AdminHr">Admin / HR</option>
+                <option value="DanishClientLead">Client Lead</option>
+                <option value="Developer">Developer</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setTypeFilter(''); setRoleFilter(''); setClientSearch(''); }}
+              className="text-xs text-zinc-500 hover:text-zinc-800 font-semibold cursor-pointer"
+            >
+              Reset Filters
+            </button>
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+              Loading employee directory...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-xs text-rose-600 font-medium">
+              Error: {error}
+            </div>
+          ) : employees.length === 0 ? (
+            <div className="p-12 text-center text-xs text-zinc-500">
+              No staff members found matching filter criteria.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th>ID</th>
-                    <th>Full Name</th>
-                    <th>Work Email</th>
-                    <th>Job Title</th>
-                    <th>Classification</th>
-                    <th>Assigned Client Org</th>
-                    <th>Primary Stack</th>
-                    <th>Hardware</th>
-                    <th>Actions</th>
+                    <th className="py-3 px-4">Staff Member</th>
+                    <th className="py-3 px-4">Position</th>
+                    <th className="py-3 px-4">Classification</th>
+                    <th className="py-3 px-4">Client Org / Dept</th>
+                    <th className="py-3 px-4">Tech Stack</th>
+                    <th className="py-3 px-4">Hardware</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {employees.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" align="center" style={{ padding: '24px' }}>No employees found matching filter criteria.</td>
-                    </tr>
-                  ) : (
-                    employees.map((emp) => (
-                      <tr key={emp.id}>
-                        <td>#{emp.id}</td>
-                        <td><strong>{emp.fullName}</strong></td>
-                        <td><code>{emp.workEmail}</code></td>
-                        <td>{emp.jobTitle}</td>
-                        <td>
-                          <span className={`badge ${emp.employmentType === 'InternalCore' ? 'badge-internal' : 'badge-external'}`}>
-                            {emp.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}
-                          </span>
-                        </td>
-                        <td>{emp.clientName || 'Internal Company Operations'}</td>
-                        <td><small>{emp.primaryTechStack || 'N/A'}</small></td>
-                        <td>{emp.assignedHardwareCount} item(s)</td>
-                        <td>
+                <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
+                  {employees.map((emp) => (
+                    <tr key={emp.id} className="hover:bg-zinc-50/80 transition-colors">
+                      <td className="py-3 px-4 flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#13264C] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                          {emp.fullName[0] || 'U'}
+                        </div>
+                        <div>
+                          <div className="font-bold text-zinc-950">{emp.fullName}</div>
+                          <div className="font-mono text-[10px] text-zinc-500">{emp.workEmail}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-700">{emp.jobTitle}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                            emp.employmentType === 'InternalCore'
+                              ? 'bg-[#13264C]/10 text-[#13264C] border-[#13264C]/20'
+                              : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                          }`}
+                        >
+                          {emp.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-800 font-semibold">
+                        {emp.clientName || emp.departmentName || 'Core Operations'}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[11px] text-zinc-500">
+                        {emp.primaryTechStack || '—'}
+                      </td>
+                      <td className="py-3 px-4 text-zinc-600">
+                        <span className="inline-flex items-center gap-1">
+                          <Laptop className="w-3.5 h-3.5 text-zinc-400" />
+                          <span>{emp.assignedHardwareCount}</span>
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => handleSelectEmployee(emp.id)}
-                            style={{ fontSize: '11px', padding: '3px 8px' }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-[#13264C] bg-[#13264C]/10 hover:bg-[#13264C]/20 cursor-pointer transition-colors"
                           >
-                            View Details
+                            <Eye className="w-3 h-3" />
+                            <span>Inspect</span>
                           </button>
                           {isAdmin && (
-                            <>
-                              {' '}
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteEmployee(emp.id, emp.fullName)}
-                                style={{ fontSize: '11px', padding: '3px 8px', color: '#cb2431' }}
-                              >
-                                Delete
-                              </button>
-                            </>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEmployee(emp.id, emp.fullName)}
+                              className="text-zinc-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 cursor-pointer transition-colors"
+                              title="Delete Employee"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: Employee Profile Inspector */}
+      {activeTab === 'detail' && selectedEmployee && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs flex flex-col gap-5">
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[#13264C] text-white flex items-center justify-center font-bold text-base shadow-xs">
+                {selectedEmployee.fullName[0]}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-zinc-950 m-0">
+                  {selectedEmployee.fullName}
+                </h3>
+                <div className="font-mono text-xs text-zinc-500 mt-0.5">
+                  ID: #{selectedEmployee.id} &bull; {selectedEmployee.workEmail}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('roster')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 cursor-pointer transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Roster</span>
+            </button>
+          </div>
+
+          {/* Details Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-zinc-50 p-4 rounded-xl border border-zinc-200/80 text-xs">
+            <div>
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Position</div>
+              <div className="font-semibold text-zinc-950 mt-0.5">{selectedEmployee.jobTitle}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Classification</div>
+              <div className="font-semibold text-zinc-950 mt-0.5">
+                {selectedEmployee.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Client / Dept</div>
+              <div className="font-semibold text-zinc-950 mt-0.5">
+                {selectedEmployee.clientName || 'Internal Company'}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Tech Stack</div>
+              <div className="font-mono font-semibold text-[#13264C] mt-0.5">
+                {selectedEmployee.primaryTechStack || 'Standard Environment'}
+              </div>
+            </div>
+          </div>
+
+          {/* Hardware Custody */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+                <Laptop className="w-4 h-4" />
+              </span>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 m-0">
+                Hardware Custody Ledger ({selectedEmployee.hardwareItems?.length || 0})
+              </h4>
+            </div>
+
+            {selectedEmployee.hardwareItems?.length === 0 ? (
+              <p className="text-xs text-zinc-500 m-0">No company hardware items currently logged in custody.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-zinc-200/80">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Asset Tag</th>
+                      <th className="py-2.5 px-3">Model</th>
+                      <th className="py-2.5 px-3">Serial No</th>
+                      <th className="py-2.5 px-3">Assigned Date</th>
+                      <th className="py-2.5 px-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
+                    {selectedEmployee.hardwareItems.map((item) => (
+                      <tr key={item.id} className="hover:bg-zinc-50/80">
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#13264C]">{item.assetTag}</td>
+                        <td className="py-2.5 px-3 font-semibold text-zinc-950">{item.modelName}</td>
+                        <td className="py-2.5 px-3 font-mono text-zinc-500">{item.serialNumber}</td>
+                        <td className="py-2.5 px-3 font-mono text-zinc-500">{item.assignedDate}</td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {item.status}
+                          </span>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tab 2: Selected Employee Details */}
-        {activeTab === 'detail' && selectedEmployee && (
-          <fieldset style={{ margin: 0 }}>
-            <legend>Profile Details: {selectedEmployee.fullName} (ID: #{selectedEmployee.id})</legend>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-              <div><strong>Job Title:</strong> {selectedEmployee.jobTitle}</div>
-              <div><strong>Email:</strong> <code>{selectedEmployee.workEmail}</code></div>
-              <div><strong>Classification:</strong> {selectedEmployee.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}</div>
-              <div><strong>Client Assignment:</strong> {selectedEmployee.clientName || 'Internal Company Operations'}</div>
-              <div><strong>Primary Tech Stack:</strong> {selectedEmployee.primaryTechStack || 'N/A'}</div>
-            </div>
+      {/* TAB 3: Onboard Employee Form */}
+      {activeTab === 'onboard' && isAdmin && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-2xl">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+              <UserPlus className="w-4 h-4 text-[#D61766]" />
+            </span>
+            <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+              Onboard New Staff Member
+            </h3>
+          </div>
 
-            <h4 style={{ margin: '16px 0 8px 0' }}>Hardware Custody Documentation ({selectedEmployee.hardwareItems?.length || 0})</h4>
-            {selectedEmployee.hardwareItems?.length === 0 ? (
-              <p style={{ margin: '0 0 16px 0', color: '#64748b' }}>No company hardware currently in custody.</p>
-            ) : (
-              <table border="1" cellPadding="4" cellSpacing="0" style={{ width: '100%', marginBottom: '16px' }}>
-                <thead>
-                  <tr>
-                    <th>Asset Tag</th>
-                    <th>Model</th>
-                    <th>Serial Number</th>
-                    <th>Assigned Date</th>
-                    <th>Status</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedEmployee.hardwareItems.map((item) => (
-                    <tr key={item.id}>
-                      <td><strong>{item.assetTag}</strong></td>
-                      <td>{item.modelName}</td>
-                      <td><code>{item.serialNumber}</code></td>
-                      <td>{item.assignedDate}</td>
-                      <td>{item.status}</td>
-                      <td>{item.notes || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            <h4 style={{ margin: '16px 0 8px 0' }}>Recent Service Desk Requests ({selectedEmployee.recentTickets?.length || 0})</h4>
-            {selectedEmployee.recentTickets?.length === 0 ? (
-              <p style={{ margin: '0 0 16px 0', color: '#64748b' }}>No recent tickets filed.</p>
-            ) : (
-              <table border="1" cellPadding="4" cellSpacing="0" style={{ width: '100%', marginBottom: '16px' }}>
-                <thead>
-                  <tr>
-                    <th>Ticket ID</th>
-                    <th>Priority</th>
-                    <th>Title</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedEmployee.recentTickets.map((ticket) => (
-                    <tr key={ticket.id}>
-                      <td><strong>#{ticket.id}</strong></td>
-                      <td>{ticket.priority}</td>
-                      <td>{ticket.title}</td>
-                      <td>{ticket.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" onClick={() => setActiveTab('roster')}>
-                ← Back to Roster
-              </button>
-              <button type="button" onClick={() => { setSelectedEmployee(null); setActiveTab('roster'); }}>
-                Close Inspector
-              </button>
-            </div>
-          </fieldset>
-        )}
-
-        {/* Tab 3: Onboard Employee (Admin/HR Only) */}
-        {activeTab === 'onboard' && isAdmin && (
-          <fieldset style={{ margin: 0 }}>
-            <legend>New Employee Details</legend>
-            <form onSubmit={handleCreateEmployee} style={{ marginTop: '8px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                <p>
-                  <label htmlFor="fullName">Full Name: </label>
-                  <br />
-                  <input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    required
-                    style={{ width: '100%' }}
-                    value={formData.fullName}
-                    onChange={handleFormChange}
-                  />
-                </p>
-
-                <p>
-                  <label htmlFor="workEmail">Work Email: </label>
-                  <br />
-                  <input
-                    id="workEmail"
-                    name="workEmail"
-                    type="email"
-                    required
-                    style={{ width: '100%' }}
-                    value={formData.workEmail}
-                    onChange={handleFormChange}
-                  />
-                </p>
-
-                <p>
-                  <label htmlFor="jobTitle">Job Title: </label>
-                  <br />
-                  <input
-                    id="jobTitle"
-                    name="jobTitle"
-                    type="text"
-                    required
-                    style={{ width: '100%' }}
-                    value={formData.jobTitle}
-                    onChange={handleFormChange}
-                  />
-                </p>
-
-                <p>
-                  <label htmlFor="employmentType">Employment Type: </label>
-                  <br />
-                  <select
-                    id="employmentType"
-                    name="employmentType"
-                    style={{ width: '100%' }}
-                    value={formData.employmentType}
-                    onChange={handleFormChange}
-                  >
-                    <option value="ClientDedicated">Client Dedicated</option>
-                    <option value="InternalCore">Internal Core</option>
-                  </select>
-                </p>
-
-                <p>
-                  <label htmlFor="role">System Role: </label>
-                  <br />
-                  <select
-                    id="role"
-                    name="role"
-                    style={{ width: '100%' }}
-                    value={formData.role}
-                    onChange={handleFormChange}
-                  >
-                    <option value="Developer">Developer</option>
-                    <option value="DanishClientLead">Danish Client Lead</option>
-                    <option value="AdminHr">Admin / HR</option>
-                  </select>
-                </p>
-
-                {formData.employmentType === 'ClientDedicated' && (
-                  <p>
-                    <label htmlFor="clientName">Danish Client Name: </label>
-                    <br />
-                    <input
-                      id="clientName"
-                      name="clientName"
-                      type="text"
-                      placeholder="e.g. Kobenhavn Tech A/S"
-                      style={{ width: '100%' }}
-                      value={formData.clientName}
-                      onChange={handleFormChange}
-                    />
-                  </p>
-                )}
-
-                <p>
-                  <label htmlFor="primaryTechStack">Primary Tech Stack: </label>
-                  <br />
-                  <input
-                    id="primaryTechStack"
-                    name="primaryTechStack"
-                    type="text"
-                    placeholder="e.g. .NET 8, React, PostgreSQL"
-                    style={{ width: '100%' }}
-                    value={formData.primaryTechStack}
-                    onChange={handleFormChange}
-                  />
-                </p>
+          <form onSubmit={handleCreateEmployee} className="flex flex-col gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">First Name *</label>
+                <input
+                  name="firstName"
+                  type="text"
+                  required
+                  placeholder="e.g. Danilo"
+                  value={formData.firstName}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                />
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                <button type="submit">Submit Onboarding Record</button>
-                <button type="button" onClick={() => setActiveTab('roster')}>Cancel</button>
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Last Name *</label>
+                <input
+                  name="lastName"
+                  type="text"
+                  required
+                  placeholder="e.g. Navarro"
+                  value={formData.lastName}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                />
               </div>
-            </form>
-          </fieldset>
-        )}
-      </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Middle Name (Optional)</label>
+                <input
+                  name="middleName"
+                  type="text"
+                  placeholder="e.g. Cruz"
+                  value={formData.middleName}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Work Email Address *</label>
+                <input
+                  name="workEmail"
+                  type="email"
+                  required
+                  placeholder="e.g. d.navarro@company.io"
+                  value={formData.workEmail}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Position / Job Title *</label>
+                <input
+                  name="jobTitle"
+                  type="text"
+                  required
+                  placeholder="e.g. Senior Backend Engineer"
+                  value={formData.jobTitle}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Classification *</label>
+                <select
+                  name="employmentType"
+                  value={formData.employmentType}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                >
+                  <option value="ClientDedicated">Client Dedicated</option>
+                  <option value="InternalCore">Internal Core</option>
+                </select>
+              </div>
+            </div>
+
+            {formData.employmentType === 'ClientDedicated' && (
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Danish Client Enterprise</label>
+                <input
+                  name="clientName"
+                  type="text"
+                  placeholder="e.g. Nordic Logistics ApS"
+                  value={formData.clientName}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">Primary Tech Stack &amp; Skills</label>
+              <input
+                name="primaryTechStack"
+                type="text"
+                placeholder="e.g. .NET 8, React, PostgreSQL, Docker"
+                value={formData.primaryTechStack}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-xs cursor-pointer transition-all"
+              >
+                <Send className="w-4 h-4" />
+                <span>Submit Staff Onboarding Record</span>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('roster')}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

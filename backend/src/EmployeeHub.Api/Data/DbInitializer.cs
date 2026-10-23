@@ -17,10 +17,26 @@ public static class DbInitializer
         else
         {
             await context.Database.EnsureCreatedAsync();
+            try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Employees ADD COLUMN FirstName TEXT NOT NULL DEFAULT '';"); } catch { }
+            try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Employees ADD COLUMN MiddleName TEXT NOT NULL DEFAULT '';"); } catch { }
+            try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Employees ADD COLUMN LastName TEXT NOT NULL DEFAULT '';"); } catch { }
         }
 
         if (await context.Departments.AnyAsync() && await context.Employees.AnyAsync())
         {
+            // Backfill existing rows if empty
+            var existingStaff = await context.Employees.Where(e => e.FirstName == "" && e.LastName == "").ToListAsync();
+            foreach (var staff in existingStaff)
+            {
+                var parts = staff.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 1) { staff.FirstName = parts[0]; }
+                else if (parts.Length == 2) { staff.FirstName = parts[0]; staff.LastName = parts[1]; }
+                else if (parts.Length > 2) { staff.FirstName = parts[0]; staff.MiddleName = string.Join(" ", parts.Skip(1).Take(parts.Length - 2)); staff.LastName = parts[^1]; }
+            }
+            if (existingStaff.Count > 0)
+            {
+                await context.SaveChangesAsync();
+            }
             return; // DB has already been seeded
         }
 
@@ -62,6 +78,9 @@ public static class DbInitializer
         // Super Admin (The Manager of Dev Operation)
         var superAdmin = new Employee
         {
+            FirstName = "Danilo",
+            MiddleName = "R.",
+            LastName = "Navarro",
             FullName = "Danilo Navarro",
             WorkEmail = "superadmin@company.io",
             PasswordHash = defaultPasswordHash,
@@ -82,6 +101,9 @@ public static class DbInitializer
         // Dev Ops Member (Normal Admin)
         var devOpsMember = new Employee
         {
+            FirstName = "Christian",
+            MiddleName = "P.",
+            LastName = "Reyes",
             FullName = "Christian Reyes",
             WorkEmail = "devops@company.io",
             PasswordHash = defaultPasswordHash,
@@ -102,6 +124,9 @@ public static class DbInitializer
         // HR Department Manager
         var hrManager = new Employee
         {
+            FirstName = "Maria",
+            MiddleName = "C.",
+            LastName = "Santos",
             FullName = "Maria Santos",
             WorkEmail = "hr.manager@company.io",
             PasswordHash = defaultPasswordHash,
@@ -122,6 +147,9 @@ public static class DbInitializer
         // IT Team Specialist (Department Member)
         var itSpecialist = new Employee
         {
+            FirstName = "Mark",
+            MiddleName = "J.",
+            LastName = "Villanueva",
             FullName = "Mark Villanueva",
             WorkEmail = "it.specialist@company.io",
             PasswordHash = defaultPasswordHash,
@@ -142,6 +170,9 @@ public static class DbInitializer
         // Finance Specialist (Department Member)
         var financeSpecialist = new Employee
         {
+            FirstName = "Grace",
+            MiddleName = "L.",
+            LastName = "Tan",
             FullName = "Grace Tan",
             WorkEmail = "finance@company.io",
             PasswordHash = defaultPasswordHash,
@@ -162,6 +193,9 @@ public static class DbInitializer
         // External Client Dedicated Developer 1 (Manila engineer assigned to Danish Client)
         var devArnel = new Employee
         {
+            FirstName = "Arnel",
+            MiddleName = "D.",
+            LastName = "Cruz",
             FullName = "Arnel Cruz",
             WorkEmail = "dev.arnel@company.io",
             PasswordHash = defaultPasswordHash,
@@ -182,6 +216,9 @@ public static class DbInitializer
         // External Client Dedicated Developer 2 (Manila engineer assigned to Danish Client)
         var devBianca = new Employee
         {
+            FirstName = "Bianca",
+            MiddleName = "S.",
+            LastName = "Mendoza",
             FullName = "Bianca Mendoza",
             WorkEmail = "dev.bianca@company.io",
             PasswordHash = defaultPasswordHash,

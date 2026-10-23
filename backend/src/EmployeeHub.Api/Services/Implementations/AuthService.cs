@@ -41,9 +41,39 @@ public class AuthService : IAuthService
             throw new ArgumentException($"An employee with email '{dto.WorkEmail}' already exists.");
         }
 
+        var firstName = dto.FirstName?.Trim() ?? string.Empty;
+        var middleName = dto.MiddleName?.Trim() ?? string.Empty;
+        var lastName = dto.LastName?.Trim() ?? string.Empty;
+        var fullName = !string.IsNullOrWhiteSpace(dto.FullName)
+            ? dto.FullName.Trim()
+            : string.Join(" ", new[] { firstName, middleName, lastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        if (string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(fullName))
+        {
+            var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+            {
+                firstName = parts[0];
+            }
+            else if (parts.Length == 2)
+            {
+                firstName = parts[0];
+                lastName = parts[1];
+            }
+            else if (parts.Length > 2)
+            {
+                firstName = parts[0];
+                middleName = string.Join(" ", parts.Skip(1).Take(parts.Length - 2));
+                lastName = parts[^1];
+            }
+        }
+
         var employee = new Employee
         {
-            FullName = dto.FullName.Trim(),
+            FirstName = firstName,
+            MiddleName = middleName,
+            LastName = lastName,
+            FullName = fullName,
             WorkEmail = email,
             PasswordHash = PasswordHasher.HashPassword(dto.Password),
             JobTitle = dto.JobTitle.Trim(),
@@ -147,7 +177,10 @@ public class AuthService : IAuthService
             e.HasTicketingAccess,
             e.CanAssignEmployees,
             e.ClientName,
-            e.PrimaryTechStack
+            e.PrimaryTechStack,
+            e.FirstName,
+            e.MiddleName,
+            e.LastName
         );
     }
 }

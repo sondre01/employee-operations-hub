@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Building2,
+  PlusCircle,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  Send,
+  X,
+  Layers
+} from 'lucide-react';
 
 export default function DepartmentManagementView() {
   const { currentUser } = useAuth();
@@ -55,141 +66,193 @@ export default function DepartmentManagementView() {
     }
   };
 
-  const isSuperAdmin = currentUser.ticketingRole === 'SuperAdmin';
+  const isSuperAdmin = currentUser?.ticketingRole === 'SuperAdmin';
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <h2 style={{ margin: '0 0 10px 0' }}>Department Management</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <Building2 className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Department Operations Management
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Define organizational business units, dispatch routing queues, and departmental resolver groups.
+          </p>
+        </div>
 
-        {/* Sub-tabs */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
+        {/* Tab Switcher */}
+        <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setActiveTab('list')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'list' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'list' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'list' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'list'
+                ? 'bg-[#13264C] text-white shadow-xs'
+                : 'text-zinc-600 hover:text-zinc-950'
+            }`}
           >
-            🏢 Registered Departments ({departments.length})
+            Departments ({departments.length})
           </button>
-
           {isSuperAdmin && (
             <button
               type="button"
               onClick={() => setActiveTab('create')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: activeTab === 'create' ? 600 : 400,
-                border: 'none',
-                background: 'none',
-                borderBottom: activeTab === 'create' ? '2px solid #0366d6' : '2px solid transparent',
-                color: activeTab === 'create' ? '#0366d6' : '#586069',
-                cursor: 'pointer'
-              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'create'
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
             >
-              ➕ Register New Department
+              <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
+              <span>New Department</span>
             </button>
           )}
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      {/* Success Notification */}
+      <AnimatePresence>
         {formSuccess && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{formSuccess}</span>
-            <button type="button" onClick={() => setFormSuccess(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#166534', fontWeight: 600 }}>✕</button>
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{formSuccess}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormSuccess(null)}
+              className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* TAB 1: Department Cards Grid */}
+      {activeTab === 'list' && (
+        <div>
+          {loading ? (
+            <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+              Loading departments...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-xs text-rose-600 font-medium">
+              Error: {error}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {departments.map((d) => (
+                <div
+                  key={d.id}
+                  className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs flex flex-col justify-between hover:border-zinc-300 transition-all"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+                          <Layers className="w-4 h-4" />
+                        </span>
+                        <h3 className="text-sm font-bold text-zinc-950 m-0">{d.name}</h3>
+                      </div>
+                      <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200">
+                        ID #{d.id}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                      {d.description || 'General organizational functional queue.'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-zinc-100 text-[11px] text-zinc-500">
+                    <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Active Queue
+                    </span>
+                    <span className="text-zinc-700 font-medium">Routing Enabled</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: Register Department Form */}
+      {activeTab === 'create' && isSuperAdmin && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+              <PlusCircle className="w-4 h-4 text-[#D61766]" />
+            </span>
+            <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+              Register New Department
+            </h3>
           </div>
-        )}
 
-        {/* Tab 1: Departments Table */}
-        {activeTab === 'list' && (
-          <div>
-            {loading && <p>Loading departments...</p>}
-            {error && <p><strong>Error:</strong> {error}</p>}
+          <form onSubmit={handleCreateDepartment} className="flex flex-col gap-3.5">
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Department Name *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Legal &amp; Corporate Affairs"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+              />
+            </div>
 
-            {!loading && (
-              <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Department Name</th>
-                    <th>Scope &amp; Description</th>
-                    <th>Staff Members</th>
-                    <th>Total Tickets Filed</th>
-                    <th>Created Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {departments.map((d) => (
-                    <tr key={d.id}>
-                      <td><strong>#{d.id}</strong></td>
-                      <td><strong>{d.name}</strong></td>
-                      <td>{d.description}</td>
-                      <td>{d.memberCount} employee(s)</td>
-                      <td>{d.ticketCount} ticket(s)</td>
-                      <td>{new Date(d.createdAtUtc).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Description &amp; Operational Scope *
+              </label>
+              <textarea
+                rows={3}
+                required
+                placeholder="Describe ticketing responsibilities and team resolver mandate..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+              />
+            </div>
 
-        {/* Tab 2: Create Department Form (Super Admin Only) */}
-        {activeTab === 'create' && isSuperAdmin && (
-          <fieldset style={{ margin: 0 }}>
-            <legend>Register New Company Department</legend>
-            <form onSubmit={handleCreateDepartment} style={{ marginTop: '8px' }}>
-              <p>
-                <label htmlFor="deptName">Department Name:</label>
-                <br />
-                <input
-                  id="deptName"
-                  type="text"
-                  required
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                  placeholder="e.g. Legal & Compliance or Cloud Security"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </p>
-
-              <p>
-                <label htmlFor="deptDesc">Description &amp; Scope:</label>
-                <br />
-                <input
-                  id="deptDesc"
-                  type="text"
-                  required
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                  placeholder="e.g. Handles contract reviews, NDA tracking, and statutory licensing."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </p>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="submit" disabled={submitting}>
-                  {submitting ? 'Creating...' : 'Register Department'}
-                </button>
-                <button type="button" onClick={() => setActiveTab('list')}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </fieldset>
-        )}
-      </div>
+            <div className="flex items-center gap-2 pt-2">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={submitting}
+                className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-xs cursor-pointer transition-all disabled:opacity-60"
+              >
+                <Send className="w-4 h-4" />
+                <span>{submitting ? 'Creating...' : 'Register Department'}</span>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('list')}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,14 +8,17 @@ public record LoginRequestDto(
 );
 
 public record RegisterRequestDto(
-    string FullName,
+    string? FirstName,
+    string? MiddleName,
+    string? LastName,
+    string? FullName,
     string WorkEmail,
     string Password,
     string JobTitle,
-    bool IsInternal,
-    int? DepartmentId,
-    string? ClientName,
-    string? PrimaryTechStack
+    bool IsInternal = false,
+    int? DepartmentId = null,
+    string? ClientName = null,
+    string? PrimaryTechStack = null
 );
 
 public record AuthResponseDto(
@@ -30,7 +33,10 @@ public record AuthResponseDto(
     bool HasTicketingAccess,
     bool CanAssignEmployees,
     string? ClientName,
-    string PrimaryTechStack
+    string PrimaryTechStack,
+    string FirstName = "",
+    string MiddleName = "",
+    string LastName = ""
 );
 
 public record QuickPersonaDto(

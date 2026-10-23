@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ShieldCheck,
+  FileCheck2,
+  PlusCircle,
+  CheckCircle2,
+  AlertTriangle,
+  BookOpen,
+  Trash2,
+  ChevronDown,
+  Check,
+  X,
+  Send,
+  Users
+} from 'lucide-react';
 
 export default function PolicyComplianceView() {
-  const { currentPersona } = useAuth();
+  const { currentPersona, currentUser } = useAuth();
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,12 +31,13 @@ export default function PolicyComplianceView() {
     isMandatory: true,
   });
   const [formSuccess, setFormSuccess] = useState(null);
+  const [activeTab, setActiveTab] = useState('policies'); // 'policies' | 'publish'
 
   const fetchPolicies = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiRequest(`/policies?employeeId=${currentPersona.id}`);
+      const data = await apiRequest(`/policies?employeeId=${currentPersona?.id || currentUser?.id}`);
       setPolicies(data);
     } catch (err) {
       setError(err.message);
@@ -32,14 +48,14 @@ export default function PolicyComplianceView() {
 
   useEffect(() => {
     fetchPolicies();
-  }, [currentPersona.id]);
+  }, [currentPersona?.id, currentUser?.id]);
 
   const handleAcknowledge = async (policyId) => {
     try {
       await apiRequest(`/policies/${policyId}/acknowledge`, {
         method: 'POST',
         body: {
-          employeeId: currentPersona.id,
+          employeeId: currentPersona?.id || currentUser?.id,
         },
       });
       fetchPolicies();
@@ -55,8 +71,6 @@ export default function PolicyComplianceView() {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
-
-  const [activeTab, setActiveTab] = useState('policies'); // 'policies' | 'publish'
 
   const handleCreatePolicy = async (e) => {
     e.preventDefault();
@@ -91,205 +105,312 @@ export default function PolicyComplianceView() {
     }
   };
 
-  const isAdmin = currentPersona.role === 'AdminHr';
+  const isAdmin = currentPersona?.role === 'AdminHr' || currentUser?.ticketingRole === 'SuperAdmin';
+  const acknowledgedCount = policies.filter(p => p.isAcknowledgedByCurrentEmployee).length;
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <h2 style={{ margin: '0 0 10px 0' }}>Company Policies, Handbooks &amp; Compliance</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <ShieldCheck className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Policies, Handbooks &amp; Compliance
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Mandatory employment guidelines, NDA agreements, and statutory compliance handbooks.
+          </p>
+        </div>
 
-        {/* Sub-tabs to eliminate vertical scrolling */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('policies')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'policies' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'policies' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'policies' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            📜 Company Policies ({policies.length})
-          </button>
-
-          {isAdmin && (
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
             <button
               type="button"
-              onClick={() => setActiveTab('publish')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: activeTab === 'publish' ? 600 : 400,
-                border: 'none',
-                background: 'none',
-                borderBottom: activeTab === 'publish' ? '2px solid #0366d6' : '2px solid transparent',
-                color: activeTab === 'publish' ? '#0366d6' : '#586069',
-                cursor: 'pointer'
-              }}
+              onClick={() => setActiveTab('policies')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'policies'
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
             >
-              ➕ Publish New Policy (Admin/HR)
+              Policies ({policies.length})
             </button>
-          )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('publish')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'publish'
+                    ? 'bg-[#13264C] text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
+                <span>Publish Policy</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      {/* Success Notification */}
+      <AnimatePresence>
         {formSuccess && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{formSuccess}</span>
-            <button type="button" onClick={() => setFormSuccess(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#166534', fontWeight: 600 }}>✕</button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{formSuccess}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormSuccess(null)}
+              className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Tab 1: Policies List */}
-        {activeTab === 'policies' && (
+      {/* Overall Compliance Progress Bar */}
+      <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#13264C]/10 text-[#13264C] flex items-center justify-center font-bold shrink-0">
+            <FileCheck2 className="w-5 h-5" />
+          </div>
           <div>
-            {loading && <p>Loading company policies...</p>}
-            {error && <p><strong>Error:</strong> {error}</p>}
-
-            {!loading && (
-              <div>
-                {policies.length === 0 ? (
-                  <p>No policies published yet.</p>
-                ) : (
-                  policies.map((p) => {
-                    const acknowledged = p.isAcknowledgedByCurrentEmployee;
-
-                    return (
-                      <fieldset key={p.id} style={{ marginBottom: '16px', background: '#ffffff' }}>
-                        <legend>
-                          <strong>{p.title} (Version {p.version})</strong>
-                          {p.isMandatory && ' [Mandatory Policy]'}
-                        </legend>
-
-                        <p>
-                          <strong>Published:</strong> {new Date(p.publishedAtUtc).toLocaleDateString()} |{' '}
-                          <strong>Total Company Acknowledgements:</strong> {p.totalAcknowledgements}
-                        </p>
-
-                        <details open>
-                          <summary><strong>Read Policy Summary</strong></summary>
-                          <p style={{ whiteSpace: 'pre-line', marginTop: '8px' }}>{p.summaryMarkdown}</p>
-                        </details>
-
-                        <div style={{ marginTop: '12px' }}>
-                          <strong>Your Compliance Status ({currentPersona.name}): </strong>
-                          {acknowledged ? (
-                            <span>
-                              ✅ <strong>Acknowledged</strong> on{' '}
-                              {p.acknowledgedAtUtc
-                                ? new Date(p.acknowledgedAtUtc).toLocaleString()
-                                : 'Recorded'}
-                            </span>
-                          ) : (
-                            <span>
-                              ⚠️ <strong>Pending Acknowledgement</strong>{' '}
-                              <button
-                                type="button"
-                                onClick={() => handleAcknowledge(p.id)}
-                                style={{ marginLeft: '8px' }}
-                              >
-                                I Have Read and Agree (Sign Read-Receipt)
-                              </button>
-                            </span>
-                          )}
-                        </div>
-
-                        {isAdmin && (
-                          <div style={{ marginTop: '10px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePolicy(p.id, p.title)}
-                              style={{ fontSize: '11px', color: '#cb2431' }}
-                            >
-                              Delete Policy Document
-                            </button>
-                          </div>
-                        )}
-                      </fieldset>
-                    );
-                  })
-                )}
-              </div>
-            )}
+            <div className="text-xs font-bold text-zinc-950">
+              Personal Compliance Status ({currentUser?.fullName || currentPersona?.name})
+            </div>
+            <div className="text-[11px] text-zinc-500 mt-0.5">
+              {acknowledgedCount} of {policies.length} mandatory guidelines signed and recorded on file
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* Tab 2: Publish Policy Form */}
-        {activeTab === 'publish' && isAdmin && (
-          <fieldset style={{ margin: 0 }}>
-            <legend>Publish Company Document</legend>
-            <form onSubmit={handleCreatePolicy} style={{ marginTop: '8px' }}>
-              <p>
-                <label htmlFor="policyTitle">Policy Title: </label>
-                <br />
-                <input
-                  id="policyTitle"
-                  name="title"
-                  type="text"
-                  required
-                  placeholder="e.g. Clean Desk & Confidentiality Policy"
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                  value={formData.title}
-                  onChange={handleFormChange}
-                />
-              </p>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-bold border ${
+              acknowledgedCount === policies.length && policies.length > 0
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-[#D61766]/10 text-[#D61766] border-[#D61766]/20'
+            }`}
+          >
+            {acknowledgedCount === policies.length && policies.length > 0
+              ? '✓ 100% Fully Compliant'
+              : `Pending ${policies.length - acknowledgedCount} Signatures`}
+          </span>
+        </div>
+      </div>
 
-              <p>
-                <label htmlFor="policyVersion">Version: </label>
-                <br />
+      {/* TAB 1: Policy Cards */}
+      {activeTab === 'policies' && (
+        <div className="flex flex-col gap-4">
+          {loading ? (
+            <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+              Loading compliance policies...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-xs text-rose-600 font-medium">
+              Error loading policies: {error}
+            </div>
+          ) : policies.length === 0 ? (
+            <div className="p-12 text-center text-xs text-zinc-500">
+              No policies published yet.
+            </div>
+          ) : (
+            policies.map((p) => {
+              const acknowledged = p.isAcknowledgedByCurrentEmployee;
+
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs flex flex-col gap-3 transition-all hover:border-zinc-300"
+                >
+                  {/* Policy Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+                        <BookOpen className="w-4 h-4" />
+                      </span>
+                      <h3 className="text-sm sm:text-base font-bold text-zinc-950 tracking-tight m-0">
+                        {p.title}
+                      </h3>
+                      <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700 border border-zinc-200">
+                        v{p.version}
+                      </span>
+                      {p.isMandatory && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#D61766]/10 text-[#D61766] border border-[#D61766]/20">
+                          Mandatory
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto text-xs text-zinc-500">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>{p.totalAcknowledgements} Signatures</span>
+                      </span>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePolicy(p.id, p.title)}
+                          className="text-zinc-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 cursor-pointer transition-colors"
+                          title="Delete Policy"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Summary Content */}
+                  <div className="p-3.5 rounded-xl bg-zinc-50/80 border border-zinc-200/70 text-xs text-zinc-700 leading-relaxed whitespace-pre-line">
+                    {p.summaryMarkdown}
+                  </div>
+
+                  {/* Card Bottom: Acknowledgement Status & Action */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-zinc-100 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-500 font-medium">Your Compliance Record:</span>
+                      {acknowledged ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-emerald-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Acknowledged on {new Date(p.acknowledgedAtUtc || Date.now()).toLocaleDateString()}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 font-bold text-[#D61766]">
+                          <AlertTriangle className="w-4 h-4 text-[#D61766]" />
+                          <span>Pending Read-Receipt</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {!acknowledged && (
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="button"
+                        onClick={() => handleAcknowledge(p.id)}
+                        className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-xs cursor-pointer transition-all self-start sm:self-auto"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Sign &amp; Acknowledge</span>
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: Publish Policy Form */}
+      {activeTab === 'publish' && isAdmin && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+              <PlusCircle className="w-4 h-4 text-[#D61766]" />
+            </span>
+            <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+              Publish New Policy Handbook
+            </h3>
+          </div>
+
+          <form onSubmit={handleCreatePolicy} className="flex flex-col gap-3.5">
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Policy Document Title
+              </label>
+              <input
+                name="title"
+                type="text"
+                required
+                placeholder="e.g. Remote Work Security & Hardware Encryption Policy"
+                value={formData.title}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Revision Version
+                </label>
                 <input
-                  id="policyVersion"
                   name="version"
                   type="text"
                   required
-                  placeholder="1.0"
-                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  placeholder="e.g. 1.0 or 2.1"
                   value={formData.version}
                   onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                 />
-              </p>
-
-              <p>
-                <label htmlFor="summaryMarkdown">Policy Content / Summary: </label>
-                <br />
-                <textarea
-                  id="summaryMarkdown"
-                  name="summaryMarkdown"
-                  rows="6"
-                  required
-                  placeholder="Document the requirements, rules, and developer expectations..."
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                  value={formData.summaryMarkdown}
-                  onChange={handleFormChange}
-                />
-              </p>
-
-              <p>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    name="isMandatory"
-                    type="checkbox"
-                    checked={formData.isMandatory}
-                    onChange={handleFormChange}
-                  />
-                  <span>Mandatory acknowledgement for all outstaffed developers</span>
-                </label>
-              </p>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="submit">Publish Policy</button>
-                <button type="button" onClick={() => setActiveTab('policies')}>Cancel</button>
               </div>
-            </form>
-          </fieldset>
-        )}
-      </div>
+
+              <div className="flex items-center gap-2 pt-5">
+                <input
+                  id="isMandatory"
+                  name="isMandatory"
+                  type="checkbox"
+                  checked={formData.isMandatory}
+                  onChange={handleFormChange}
+                  className="w-4 h-4 rounded text-[#13264C] focus:ring-[#13264C]"
+                />
+                <label htmlFor="isMandatory" className="text-xs font-medium text-zinc-700 cursor-pointer">
+                  Mandatory for all staff
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Executive Policy Summary &amp; Obligations
+              </label>
+              <textarea
+                name="summaryMarkdown"
+                rows={5}
+                required
+                placeholder="Detail core obligations, security mandates, and employee compliance protocols..."
+                value={formData.summaryMarkdown}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-xs cursor-pointer transition-all"
+              >
+                <Send className="w-4 h-4" />
+                <span>Publish Policy to Workforce</span>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('policies')}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,11 +3,30 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthView from './views/auth/AuthView';
 import EmployeePortal from './views/portal/EmployeePortal';
 import TicketingManagement from './views/ticketing/TicketingManagement';
+import CommandPalette from './components/CommandPalette';
+import { interactiveFX } from './utils/interactiveFX';
+import {
+  Building2,
+  User,
+  Ticket,
+  ShieldAlert,
+  Sparkles,
+  Command,
+  Search
+} from 'lucide-react';
 
 function HubShell() {
   const { currentUser, hasTicketingAccess, isSuperAdmin, isDevOpsAdmin, canAssignEmployees } = useAuth();
   const isInternal = Boolean(currentUser?.isInternal);
   const [activeDimension, setActiveDimension] = useState('portal'); // 'portal' | 'ticketing'
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Subscribe to Cmd+K / Ctrl+K keyboard shortcut from interactiveFX
+  useEffect(() => {
+    return interactiveFX.onCommandPaletteToggle(() => {
+      setIsCommandPaletteOpen((prev) => !prev);
+    });
+  }, []);
 
   // If user is external, strictly ensure activeDimension remains on 'portal'
   useEffect(() => {
@@ -20,109 +39,134 @@ function HubShell() {
     return <AuthView />;
   }
 
+  const handleGlobalNavigate = (targetId) => {
+    if (['queue', 'stats', 'departments', 'access', 'roster'].includes(targetId)) {
+      if (hasTicketingAccess) {
+        setActiveDimension('ticketing');
+      }
+    } else {
+      setActiveDimension('portal');
+    }
+  };
+
   return (
-    <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Consolidated Single Top Bar: Brand on left, Navigation Tabs on right */}
-      <header
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #d1d5da',
-          padding: '0 20px',
-          boxSizing: 'border-box',
-          minHeight: '48px',
-          gap: '16px'
-        }}
-      >
-        {/* Left Side: Brand and Description */}
-        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, padding: '8px 0' }}>
-          <div>
-            <div style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap' }}>
-              Enterprise Employee Operations Hub
-            </div>
-            <div style={{ margin: 0, color: '#64748b', fontSize: '11px', whiteSpace: 'nowrap' }}>
-              Workforce Management Platform &bull; Internal Service Desk &bull; Client Delivery Operations
-            </div>
+    <div className="w-full h-screen flex flex-col overflow-hidden bg-zinc-50 font-sans select-none relative">
+      {/* Global Futuristic Command Palette (Cmd+K / Ctrl+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={handleGlobalNavigate}
+      />
+
+      {/* Consolidated Single Modern Header Bar */}
+      <header className="shrink-0 h-13 px-4 sm:px-6 bg-white/95 backdrop-blur-md border-b border-zinc-200/80 flex items-center justify-between gap-3 shadow-2xs z-30">
+        {/* Left: Brand Identity */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#13264C] to-[#0A152A] text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0 tracking-tight border border-white/20">
+            M
           </div>
+          <span className="text-sm sm:text-base font-bold text-zinc-950 tracking-tight truncate">
+            Employee Operations Hub
+          </span>
         </div>
 
-        {/* Right Side: Tab Navigation */}
-        <nav style={{ display: 'flex', gap: '4px', margin: 0, flexShrink: 0, alignItems: 'stretch' }}>
+        {/* Center / Right: Quick Jump Pill & Dimension Switcher */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Futuristic Command Palette Trigger */}
           <button
             type="button"
-            onClick={() => setActiveDimension('portal')}
-            style={{
-              padding: '12px 18px',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: 'none',
-              borderBottom: activeDimension === 'portal' ? '3px solid #0366d6' : '3px solid transparent',
-              color: activeDimension === 'portal' ? '#0366d6' : '#586069'
-            }}
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C]/40 text-xs font-medium text-zinc-600 transition-all cursor-pointer shadow-2xs group"
+            title="Press ⌘K or Ctrl+K anywhere to jump"
           >
-            👤 Employee Portal
+            <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#D61766] transition-colors" />
+            <span className="text-[11px] font-semibold text-zinc-600">Quick Jump</span>
+            <span className="flex items-center gap-0.5 font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-white text-zinc-500 border border-zinc-200">
+              <Command className="w-2.5 h-2.5" />
+              <span>K</span>
+            </span>
           </button>
 
-          {/* Ticketing System Management Dimension - strictly hidden for external employees */}
-          {isInternal && (
+          {/* Dimension Switcher */}
+          <nav className="flex items-center bg-zinc-100/90 p-0.5 rounded-xl border border-zinc-200/80 gap-0.5">
             <button
               type="button"
-              onClick={() => {
-                if (hasTicketingAccess) {
-                  setActiveDimension('ticketing');
-                }
-              }}
-              disabled={!hasTicketingAccess}
-              title={
-                hasTicketingAccess
-                  ? 'Access Ticketing System Management'
-                  : 'Requires operational desk access granted by DevOps Manager / Admin'
-              }
-              style={{
-                padding: '12px 18px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: hasTicketingAccess ? 'pointer' : 'not-allowed',
-                border: 'none',
-                background: 'none',
-                borderBottom: activeDimension === 'ticketing' ? '3px solid #0366d6' : '3px solid transparent',
-                color: activeDimension === 'ticketing' ? '#0366d6' : hasTicketingAccess ? '#586069' : '#959da5',
-                opacity: hasTicketingAccess ? 1 : 0.6
-              }}
+              data-ripple
+              onClick={() => setActiveDimension('portal')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none ${
+                activeDimension === 'portal'
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+              }`}
             >
-              🎫 Ticketing System Management
-              {!hasTicketingAccess && (
-                <span style={{ fontSize: '11px', marginLeft: '6px', color: '#cb2431', fontWeight: 'normal' }}>
-                  (Access Required)
-                </span>
-              )}
+              <User className="w-3.5 h-3.5" />
+              <span>Employee Portal</span>
             </button>
-          )}
-        </nav>
+
+            {/* Ticketing Management Tab */}
+            {isInternal && (
+              <button
+                type="button"
+                data-ripple
+                onClick={() => {
+                  if (hasTicketingAccess) {
+                    setActiveDimension('ticketing');
+                  }
+                }}
+                disabled={!hasTicketingAccess}
+                title={
+                  hasTicketingAccess
+                    ? 'Access Ticketing System Management'
+                    : 'Requires operational desk access granted by DevOps Manager / Admin'
+                }
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all outline-none focus:outline-none focus-visible:outline-none ${
+                  !hasTicketingAccess
+                    ? 'text-zinc-400 cursor-not-allowed opacity-60'
+                    : activeDimension === 'ticketing'
+                    ? 'bg-[#13264C] text-white shadow-xs cursor-pointer'
+                    : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60 cursor-pointer'
+                }`}
+              >
+                <Ticket className="w-3.5 h-3.5" />
+                <span>Service Desk</span>
+                {!hasTicketingAccess && (
+                  <span className="text-[10px] font-normal text-zinc-400 hidden sm:inline">(Locked)</span>
+                )}
+              </button>
+            )}
+          </nav>
+        </div>
       </header>
 
-      {/* Dimension Body - Contained & Non-scrolling shell */}
-      <main style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', minHeight: 0 }}>
-        {activeDimension === 'portal' && <EmployeePortal />}
+      {/* Main Dimension Body */}
+      <main className="flex-1 w-full flex flex-col overflow-hidden min-h-0">
+        {activeDimension === 'portal' && (
+          <EmployeePortal onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+        )}
 
         {isInternal && activeDimension === 'ticketing' && (
           hasTicketingAccess ? (
-            <TicketingManagement />
+            <TicketingManagement onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
           ) : (
-            <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-              <div className="card" style={{ backgroundColor: '#fffbdd', borderColor: '#f1e05a' }}>
-                <h3 style={{ marginTop: 0 }}>Restricted Access</h3>
-                <p>
+            <div className="p-6 overflow-y-auto flex-1 flex items-center justify-center">
+              <div className="max-w-md w-full bg-white rounded-2xl border border-amber-200/80 p-6 shadow-sm text-center">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-zinc-950 mb-1">Restricted Access</h3>
+                <p className="text-xs text-zinc-600 mb-4 leading-relaxed">
                   You do not currently have operational desk access to the Ticketing System Management.
                 </p>
-                <p style={{ margin: 0, fontSize: '13px', color: '#586069' }}>
-                  Your account is currently registered under <strong>{currentUser.departmentName || 'No Department'}</strong> with role <strong>{currentUser.ticketingRole}</strong>.
-                  If you are an internal team member needing queue resolver or administrative permissions, please contact your System Administrator (<code>superadmin@company.io</code>).
+                <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-[11px] text-zinc-600 text-left mb-4">
+                  <div>Department: <strong className="text-zinc-900">{currentUser.departmentName || 'No Department'}</strong></div>
+                  <div>Operational Role: <strong className="text-zinc-900">{currentUser.ticketingRole}</strong></div>
+                </div>
+                <p className="text-[11px] text-zinc-500">
+                  Please contact your System Administrator at{' '}
+                  <a href="mailto:superadmin@company.io" className="text-[#13264C] font-semibold underline">
+                    superadmin@company.io
+                  </a>{' '}
+                  for role elevation.
                 </p>
               </div>
             </div>

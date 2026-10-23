@@ -1,0 +1,632 @@
+\documentclass[a4paper,11pt]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm,top=2.8cm,bottom=2.8cm]{geometry}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=brandblue,citecolor=brandblue,urlcolor=brandblue]{hyperref}
+
+\tcbuselibrary{skins,breakable}
+
+% --- Colors ---
+\definecolor{brandblue}{HTML}{0366D6}
+\definecolor{branddark}{HTML}{1E293B}
+\definecolor{brandgray}{HTML}{64748B}
+\definecolor{lightgray}{HTML}{F6F8FA}
+\definecolor{bordergray}{HTML}{D1D5DA}
+\definecolor{successgreen}{HTML}{28A745}
+\definecolor{warninggold}{HTML}{D97706}
+\definecolor{dangerred}{HTML}{CB2431}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{codeframe}{HTML}{E2E8F0}
+
+% --- Typography & Spacing ---
+\setlist{itemsep=2pt, topsep=3pt, parsep=0pt}
+\setlength{\headheight}{14pt}
+
+% Section Titles Styling
+\titleformat{\section}
+  {\Large\bfseries\color{branddark}}
+  {\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{brandblue}}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{branddark}}
+  {\thesubsubsection}{1em}{}
+
+% --- Headers & Footers ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{brandgray}{\footnotesize Employee Operations Hub (MVP) -- Technical Documentation}}
+\fancyhead[R]{\textcolor{brandgray}{\footnotesize \leftmark}}
+\fancyfoot[C]{\textcolor{brandgray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+% --- Listings / Code Style ---
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\small\ttfamily\color{branddark},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeframe},
+  captionpos=b,
+  numbers=none,
+  tabsize=2,
+  showstringspaces=false,
+  keywordstyle=\color{brandblue}\bfseries,
+  commentstyle=\color{brandgray}\itshape,
+  stringstyle=\color{successgreen}
+}
+
+% --- Custom Callout Boxes ---
+\newtcolorbox{infobox}[1][Note]{
+  colback=lightgray,
+  colframe=brandblue,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+\newtcolorbox{tipbox}[1][Tip]{
+  colback=lightgray,
+  colframe=successgreen,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+\newtcolorbox{warnbox}[1][Important]{
+  colback=lightgray,
+  colframe=dangerred,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+% --- Document Info ---
+\title{
+  \vspace{-1.5cm}
+  {\LARGE\textbf{\textcolor{branddark}{Enterprise Employee Operations Hub}}}\\[0.4cm]
+  {\large\textbf{\textcolor{brandblue}{System Architecture, REST API Specification, \& Operations Manual}}}\\[0.3cm]
+  {\small\textcolor{brandgray}{Workforce Management $\bullet$ Internal Service Desk $\bullet$ Cross-Border Operations}}
+}
+\author{\textbf{Malayo Tech Operations Team}}
+\date{Version 1.0.0 -- October 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{-0.5cm}
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\begin{infobox}[Executive Overview]
+The \textbf{Employee Operations Hub} is a production-oriented, full-stack enterprise operations platform engineered to manage workforce administration, client delivery engagements, internal IT/HR service desk ticketing, hardware custody tracking, and dual-location cross-border calendar synchronizations (Philippines $\leftrightarrow$ Denmark). It features strict Role-Based Access Control (RBAC), multi-tier operational segregation, and dual-database support (zero-config SQLite for developer agility alongside containerized PostgreSQL 16 for production workloads).
+\end{infobox}
+\end{minipage}
+\end{center}
+
+\vspace{0.2cm}
+\tableofcontents
+\newpage
+
+% ==========================================
+% SECTION 1: ARCHITECTURAL OVERVIEW
+% ==========================================
+\section{Architectural Overview \& Technology Stack}
+
+\subsection{High-Level System Topology}
+The platform is designed around clean separation of concerns, decoupling the presentation client from domain logic and backing datastores:
+
+\begin{center}
+\begin{tcolorbox}[colback=white,colframe=branddark,arc=2mm,boxrule=0.8pt,width=0.98\textwidth]
+\centering
+\small
+\begin{verbatim}
++-------------------------------------------------------------------------+
+|                          Web Browser Client                             |
+|          React 18 SPA (Vite) - Dual Dimension Top Navigation Shell       |
+|    +-----------------------------+   +-----------------------------+    |
+|    | Dimension 1: Employee Portal|   | Dimension 2: Ticketing Desk |    |
+|    +-----------------------------+   +-----------------------------+    |
++------------------------------------+------------------------------------+
+                                     |  HTTP / REST (JSON)
+                                     v
++-------------------------------------------------------------------------+
+|                  ASP.NET Core 8 Web API (Kestrel)                       |
+|   +-----------------------------------------------------------------+   |
+|   | Controllers (Route Bindings, Model Validation, Response DTOs)   |   |
+|   +-----------------------------------------------------------------+   |
+|   | Application Services (Auth, Tickets, Access, Employees, Depts)  |   |
+|   +-----------------------------------------------------------------+   |
+|   | Data Access Layer: Entity Framework Core 8 (Code-First)        |   |
+|   +-----------------------------------------------------------------+   |
++------------------------------------+------------------------------------+
+                                     |  ADONET / Provider Adapter
+                                     v
+                 +---------------------------------------+
+                 | Database Storage Engine (Configurable)|
+                 |   * Development: SQLite File DB       |
+                 |   * Production: PostgreSQL 16 Engine  |
+                 +---------------------------------------+
+\end{verbatim}
+\end{tcolorbox}
+\end{center}
+
+\subsection{Technology Stack Breakdown}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Key Characteristics \& Implementation} \\
+\midrule
+\textbf{Backend Framework} & ASP.NET Core 8 Web API & High-throughput, cross-platform REST service running on C\# 12 with native JSON serialization and OpenAPI/Swagger tooling. \\
+\addlinespace
+\textbf{ORM / Data Layer} & Entity Framework Core 8 & Code-First data modelling, automated schema initialization, strongly-typed migrations, and support for dual database providers. \\
+\addlinespace
+\textbf{Database Engines} & SQLite / PostgreSQL 16 & SQLite for instant zero-configuration local runs; PostgreSQL 16 Alpine containerized for transactional multi-user deployment. \\
+\addlinespace
+\textbf{Frontend Framework} & React 18 (Vite 5) & Modern component architecture, zero heavy external UI dependencies, CSS grid/flexbox layouts, sub-second HMR development. \\
+\addlinespace
+\textbf{Networking \& State} & Native Fetch \& Context API & Pure Fetch HTTP client with centralized error interception; React Context for authentication and active RBAC persona switching. \\
+\addlinespace
+\textbf{Containerization} & Docker \& Docker Compose & Multi-stage Docker builds for lean backend binaries and optimized frontend Nginx static file serving with reverse proxy. \\
+\bottomrule
+\end{tabularx}
+\caption{Technology Stack Specifications}
+\end{table}
+
+\subsection{Dual Database Provider Strategy}
+The API implements dynamic provider switching in \texttt{Program.cs} based on configuration:
+\begin{itemize}
+    \item \textbf{SQLite (Default Local)}: Activated when \texttt{DatabaseProvider} is omitted or set to \texttt{"Sqlite"}. It stores data in \texttt{employee\_hub.db} and uses \texttt{EnsureCreatedAsync()} to guarantee frictionless developer onboarding with zero pre-installed database engines.
+    \item \textbf{PostgreSQL (Container / Production)}: Activated when \texttt{DatabaseProvider="PostgreSql"}. It connects via Npgsql and automatically applies pending schema migrations via \texttt{MigrateAsync()}.
+\end{itemize}
+
+% ==========================================
+% SECTION 2: CODEBASE DIRECTORY STRUCTURE
+% ==========================================
+\section{Codebase Directory Structure}
+
+The monorepo separates concerns between the ASP.NET Core backend service and the React frontend client:
+
+\begin{center}
+\begin{tcolorbox}[colback=white,colframe=codeframe,arc=2mm,boxrule=0.8pt,width=0.98\textwidth]
+\begin{minipage}[t]{0.48\textwidth}
+\small\bfseries\textcolor{brandblue}{Backend Architecture (ASP.NET Core 8)}
+\begin{verbatim}
+backend/
+|-- Dockerfile
+|-- EmployeeHub.slnx
++-- src/EmployeeHub.Api/
+    |-- Controllers/
+    |   |-- AccessController.cs
+    |   |-- AuthController.cs
+    |   |-- DepartmentsController.cs
+    |   |-- EmployeesController.cs
+    |   |-- HardwareController.cs
+    |   |-- HolidaysController.cs
+    |   |-- PoliciesController.cs
+    |   +-- TicketsController.cs
+    |-- Services/
+    |   |-- Common/ (PasswordHasher)
+    |   |-- Interfaces/
+    |   +-- Implementations/
+    |-- Data/
+    |   |-- AppDbContext.cs
+    |   +-- DbInitializer.cs
+    |-- Models/
+    |   |-- Entities/
+    |   +-- Enums/
+    |-- DTOs/
+    |-- Program.cs
+    +-- appsettings.json
+\end{verbatim}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\small\bfseries\textcolor{brandblue}{Frontend Architecture (React 18 SPA)}
+\begin{verbatim}
+frontend/
+|-- Dockerfile
+|-- nginx.conf
+|-- package.json
+|-- vite.config.js
++-- src/
+    |-- api/
+    |   +-- client.js
+    |-- context/
+    |   +-- AuthContext.jsx
+    |-- utils/
+    |   +-- workforceStorage.js
+    |-- components/
+    |   +-- UserProfileNavCard.jsx
+    |-- views/
+    |   |-- auth/ (AuthView.jsx)
+    |   |-- portal/
+    |   |   |-- EmployeePortal.jsx
+    |   |   |-- ProfileView.jsx
+    |   |   |-- AttendanceView.jsx
+    |   |   |-- TimeRequestsView.jsx
+    |   |   +-- MyTicketsView.jsx
+    |   |-- ticketing/
+    |   |   |-- TicketingManagement.jsx
+    |   |   |-- TicketQueueView.jsx
+    |   |   |-- TicketStatsView.jsx
+    |   |   +-- DeptManagementView.jsx
+    |   |-- CrossBorderCalendarView.jsx
+    |   +-- PolicyComplianceView.jsx
+    |-- App.jsx
+    +-- main.jsx
+\end{verbatim}
+\end{minipage}
+\end{tcolorbox}
+\end{center}
+
+% ==========================================
+% SECTION 3: ROLE-BASED ACCESS CONTROL (RBAC)
+% ==========================================
+\section{Role-Based Access Control (RBAC) Architecture}
+
+\subsection{Dual-Dimension Conceptual Model}
+The frontend interface is split into two distinct operational dimensions via the unified header bar:
+
+\begin{enumerate}
+    \item \textbf{Dimension 1: Employee Portal (Accessible to ALL)}:
+    Designed for every employee (internal core staff and dedicated external client developers). Features include:
+    \begin{itemize}
+        \item \textbf{Single-Frame Multi-Box Profile Architecture}: High-density, non-scrollable dashboard organized into two balanced tiers:
+        \begin{enumerate}[label=\alph*.]
+            \item \textit{Primary Top Row (3 Box Containers, Equal Height)}:
+            \begin{itemize}
+                \item \textbf{Left Box}: \textit{Employment Information \& Classification} -- Name breakdown (Last Name, First Name, Middle Name), Job Role, Client Engagement, Department, Lead, and Hardware Custody indicators.
+                \item \textbf{Middle Box (Wider)}: \textit{Workday Time Clock \& Shift Station} -- Longer width containing live status, dual cross-border Manila/Copenhagen digital clocks, visual shift progress meter, and 5-action punch buttons (Clock In, Break, Lunch Out, Lunch In, Clock Out).
+                \item \textbf{Right Box}: \textit{Company Announcements \& HR Bulletins} -- Vertical bulletin cards from HR People Operations.
+            \end{itemize}
+            \item \textit{Operational Bottom Row (3 Minimal Boxes)}:
+            \begin{itemize}
+                \item \textbf{Left Minimal Box}: \textit{Onboarding Requirements Fulfillment} -- Radial SVG completion meter (75\% verified) and statutory clearance status.
+                \item \textbf{Middle Minimal Box (Wider)}: \textit{Pending Requests \& Adjustments Summary} -- Concise KPI numbers summary (Time Corrections, Overtime Pre-Approvals, Shift Adjustments) and manager routing.
+                \item \textbf{Right Minimal Box}: \textit{Payroll Schedule \& Cycle Cut-Offs} -- Dynamic single-cycle card displaying Pay Period Date, Filing Cut-Off, Approval Cut-Off, and Crediting Date.
+            \end{itemize}
+        \end{enumerate}
+        \item \textbf{Dedicated Attendance Tab (\texttt{AttendanceView.jsx})}: Full workday biometric history ledger, break/lunch tracking, and monthly timecard metrics.
+        \item \textbf{Dedicated Requests Tab (\texttt{TimeRequestsView.jsx})}: Self-service filing portal for time corrections, overtime pre-approvals, and shift adjustments directed to designated managers.
+        \item \textbf{Calendar \& Compliance}: Dual Philippine-Danish holiday calendar and company compliance policy acknowledgements.
+    \end{itemize}
+    \item \textbf{Dimension 2: Ticketing System Management (Operational Staff Only)}:
+    Strictly isolated and visible \textit{only} to internal employees who have been granted operational desk access (\texttt{HasTicketingAccess = true}). Features a streamlined, 1-word minimalist navigation bar:
+    \begin{itemize}
+        \item \textbf{Queue}: Triage and manage incoming IT Infrastructure and HR/Legal service requests.
+        \item \textbf{Analytics}: Real-time SLA compliance charts, queue velocity, and priority distribution.
+        \item \textbf{Departments}: Departmental routing configuration and operational unit settings (Admin).
+        \item \textbf{Access}: Operational desk RBAC permission delegation and manager elevation (Staff).
+        \item \textbf{Roster}: Dedicated outstaffing roster and client-developer assignment management.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Seed Testing Personas Matrix}
+The system ships pre-seeded with realistic operational personas. All test accounts utilize the default password \texttt{Password123!}:
+
+\begin{xltabular}{\textwidth}{>{\raggedright\arraybackslash\bfseries}p{2.3cm} >{\raggedright\arraybackslash\footnotesize\ttfamily}p{4.0cm} >{\raggedright\arraybackslash\small}p{1.5cm} c c >{\raggedright\arraybackslash\small}X}
+\toprule
+Role / Title & Work Email & Dept & Int? & Desk & Privileges \& Scope \\
+\midrule
+\endfirsthead
+\toprule
+Role / Title & Work Email & Dept & Int? & Desk & Privileges \& Scope \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\bottomrule
+\endlastfoot
+Super Admin & superadmin@company.io & DevOps & Yes & Yes & Full master privileges across all queues, statistical analytics, department CRUD, and user access delegation. \\
+\addlinespace
+DevOps Admin & devops@company.io & DevOps & Yes & Yes & IT \& DevOps infrastructure queues; employee access delegation rights. \\
+\addlinespace
+HR Manager & hr.manager@company.io & HR & Yes & Yes & Manages HR, payroll, statutory benefits (SSS/PhilHealth/Pag-IBIG), and onboarding tickets. \\
+\addlinespace
+IT Specialist & it.specialist@company.io & IT Team & Yes & Yes & Hardware provisioning, VPN, asset custody, and technical resolution. \\
+\addlinespace
+Finance Officer & finance@company.io & Finance & Yes & Yes & Equipment purchase reimbursements, statutory deductions, tax documentation. \\
+\addlinespace
+Dedicated Dev 1 & dev.arnel@company.io & None & No & No & Dedicated to Danish Client; strictly Employee Portal services only. \\
+\addlinespace
+Dedicated Dev 2 & dev.bianca@company.io & None & No & No & Dedicated to Danish Client; strictly Employee Portal services only. \\
+\end{xltabular}
+
+\subsection{Granular Authorization Flags}
+Each employee entity tracks operational capabilities using boolean flags:
+\begin{itemize}
+    \item \texttt{IsInternal}: Distinguishes internal operations staff from client-dedicated offshore software engineers.
+    \item \texttt{HasTicketingAccess}: Controls visibility and entry to Dimension 2 (Ticketing Management).
+    \item \texttt{CanAssignEmployees}: Authorizes privileged personnel (Super Admin or DevOps Admin) to grant or revoke ticketing access and delegate operational queues.
+\end{itemize}
+
+% ==========================================
+% SECTION 4: DATA MODELS \& SCHEMA SPECIFICATION
+% ==========================================
+\section{Domain Entities \& Data Models}
+
+\subsection{Core Entity Definitions}
+
+\subsubsection{Employee Entity (\texttt{Employee.cs})}
+Represents both internal core team members and external client-dedicated engineers.
+\begin{itemize}
+    \item \texttt{Id} (int, PK): Unique identifier.
+    \item \texttt{FirstName}, \texttt{MiddleName}, \texttt{LastName}, \texttt{FullName} (string), \texttt{WorkEmail} (string, Unique): Identity credentials broken down into discrete name components with combined full name resolution.
+    \item \texttt{PasswordHash} (string): PBKDF2/SHA256 salted password hash.
+    \item \texttt{JobTitle} (string): Professional role (e.g. Operations Specialist, Account Manager, Developer).
+    \item \texttt{PrimaryTechStack} (string, Optional): Professional competencies (omitted from initial sign up credentials to accommodate non-technical staff).
+    \item \texttt{EmploymentType} (Enum): \texttt{InternalCore (1)} or \texttt{ClientDedicated (2)}.
+    \item \texttt{Role} (Enum): \texttt{AdminHr (1)}, \texttt{DanishClientLead (2)}, or \texttt{Developer (3)}.
+    \item \texttt{TicketingRole} (Enum): \texttt{None (0)}, \texttt{SuperAdmin (1)}, \texttt{DevOpsAdmin (2)}, \texttt{DepartmentManager (3)}, or \texttt{DepartmentMember (4)}.
+    \item \texttt{IsInternal}, \texttt{HasTicketingAccess}, \texttt{CanAssignEmployees} (bool): Security flags.
+    \item \texttt{ClientName} (string?): Client identifier if dedicated (e.g., \textit{"Nordic Logistics ApS"}).
+    \item \texttt{DepartmentId} (int?, FK): Associated operational department.
+\end{itemize}
+
+\subsubsection{Department Entity (\texttt{Department.cs})}
+Represents operational units that service internal tickets and manage infrastructure.
+\begin{itemize}
+    \item \texttt{Id} (int, PK), \texttt{Name} (string), \texttt{Description} (string), \texttt{CreatedAtUtc} (datetime).
+    \item Pre-seeded departments: \textit{Dev Operation}, \textit{IT Team}, \textit{HR/Recruitment}, \textit{Finance}.
+\end{itemize}
+
+\subsubsection{Ticket Entity (\texttt{Ticket.cs})}
+Tracks operational service requests across the enterprise lifecycle.
+\begin{itemize}
+    \item \texttt{Id} (int, PK), \texttt{Title} (string), \texttt{Description} (string), \texttt{Priority} (string).
+    \item \texttt{Queue} (Enum): \texttt{ItInfrastructure (1)} or \texttt{HrLegal (2)}.
+    \item \texttt{Status} (Enum): \texttt{Open (1)}, \texttt{InProgress (2)}, \texttt{Resolved (3)}.
+    \item \texttt{CreatedByEmployeeId} (int, FK), \texttt{AssignedToEmployeeId} (int?, FK).
+    \item \texttt{ResolutionNotes} (string?), \texttt{CreatedAtUtc}, \texttt{UpdatedAtUtc}.
+\end{itemize}
+
+\subsubsection{Hardware Custody Item (\texttt{HardwareCustodyItem.cs})}
+Tracks company equipment issued to developers.
+\begin{itemize}
+    \item \texttt{Id} (int, PK), \texttt{EmployeeId} (int, FK).
+    \item \texttt{ModelName} (string, e.g., \textit{"MacBook Pro 16-inch M3 Max"}).
+    \item \texttt{SerialNumber} (string), \texttt{AssetTag} (string).
+    \item \texttt{AssignedDate} (DateOnly), \texttt{ReturnDate} (DateOnly?).
+    \item \texttt{Status} (string): \texttt{"Active"}, \texttt{"InRepair"}, or \texttt{"Returned"}.
+    \item \texttt{Notes} (string?): Condition reports, peripheral bundles.
+\end{itemize}
+
+\subsubsection{Cross-Border Holiday (\texttt{Holiday.cs})}
+Powers the dual operations calendar to bridge international schedule gaps.
+\begin{itemize}
+    \item \texttt{Id} (int, PK), \texttt{Title} (string), \texttt{HolidayDate} (DateOnly).
+    \item \texttt{Country} (Enum): \texttt{Philippines (1)} or \texttt{Denmark (2)}.
+    \item \texttt{IsWorkingDay} (bool): Accommodates special working holidays and local observances.
+\end{itemize}
+
+\subsubsection{Policy \& Compliance (\texttt{PolicyDocument.cs} \& \texttt{PolicyAcknowledgement.cs})}
+Maintains audit logs of legal and regulatory compliance.
+\begin{itemize}
+    \item \texttt{PolicyDocument}: \texttt{Title}, \texttt{Version}, \texttt{SummaryMarkdown}, \texttt{IsMandatory}, \texttt{PublishedAtUtc}.
+    \item \texttt{PolicyAcknowledgement}: Tracks employee ID, policy ID, and digital signature timestamp.
+\end{itemize}
+
+% ==========================================
+% SECTION 5: REST API REFERENCE
+% ==========================================
+\section{RESTful API Specification}
+
+All endpoints are hosted under \texttt{/api/*}. The service includes interactive OpenAPI documentation at \texttt{/swagger}.
+
+\begin{xltabular}{\textwidth}{>{\raggedright\arraybackslash\footnotesize\ttfamily}p{5.4cm} >{\raggedright\arraybackslash\small}p{3.4cm} >{\raggedright\arraybackslash\small}X}
+\toprule
+HTTP Method \& Path & Controller Layer & Description \& Parameters \\
+\midrule
+\endfirsthead
+\toprule
+HTTP Method \& Path & Controller Layer & Description \& Parameters \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\bottomrule
+\endlastfoot
+
+\multicolumn{3}{l}{\textit{\textbf{Authentication \& Personas (\texttt{AuthController})}}} \\
+\addlinespace
+POST /api/auth/login & AuthController & Authenticates user by email/password; returns user identity and roles. \\
+\addlinespace
+POST /api/auth/register & AuthController & Registers standard employee with default developer privileges. \\
+\addlinespace
+GET  /api/auth/personas & AuthController & Returns pre-configured testing personas for 1-click dev switching. \\
+\midrule
+
+\multicolumn{3}{l}{\textit{\textbf{Employee Directory (\texttt{EmployeesController})}}} \\
+\addlinespace
+GET  /api/employees & EmployeesController & Lists all employees; supports search and department filters. \\
+\addlinespace
+GET  /api/employees/\{id\} & EmployeesController & Retrieves comprehensive profile including hardware and tickets. \\
+\addlinespace
+POST /api/employees & EmployeesController & Creates a new employee record. \\
+\addlinespace
+PUT  /api/employees/\{id\} & EmployeesController & Updates employee details, tech stack, and client association. \\
+\addlinespace
+GET  /api/employees/\{id\}/hardware & EmployeesController & Lists physical assets assigned to the specified employee. \\
+\midrule
+
+\multicolumn{3}{l}{\textit{\textbf{Service Desk \& Ticketing (\texttt{TicketsController})}}} \\
+\addlinespace
+GET  /api/tickets & TicketsController & Lists tickets; filterable by \texttt{status}, \texttt{queue}, and \texttt{employeeId}. \\
+\addlinespace
+GET  /api/tickets/stats & TicketsController & Computes operational metrics, queue counts, and resolution stats. \\
+\addlinespace
+GET  /api/tickets/\{id\} & TicketsController & Retrieves complete ticket details with history and comments. \\
+\addlinespace
+POST /api/tickets & TicketsController & Submits a new support or operational request. \\
+\addlinespace
+PATCH /api/tickets/\{id\}/status & TicketsController & Updates ticket status (\texttt{Open} $\rightarrow$ \texttt{InProgress} $\rightarrow$ \texttt{Resolved}). \\
+\addlinespace
+PATCH /api/tickets/\{id\}/assign & TicketsController & Assigns ticket to an operational team member. \\
+\midrule
+
+\multicolumn{3}{l}{\textit{\textbf{Access Delegation (\texttt{AccessController})}}} \\
+\addlinespace
+GET  /api/access/employees & AccessController & Returns employee roster with ticketing roles and security flags. \\
+\addlinespace
+PATCH /api/access/\{id\} & AccessController & Updates \texttt{HasTicketingAccess}, \texttt{TicketingRole}, and delegation rights. \\
+\midrule
+
+\multicolumn{3}{l}{\textit{\textbf{Hardware Custody (\texttt{HardwareController})}}} \\
+\addlinespace
+GET  /api/hardware & HardwareController & Lists all tracked corporate hardware assets across the organization. \\
+\addlinespace
+POST /api/hardware & HardwareController & Registers new hardware asset custody assignment. \\
+\midrule
+
+\multicolumn{3}{l}{\textit{\textbf{Holidays \& Cross-Border Operations (\texttt{HolidaysController})}}} \\
+\addlinespace
+GET  /api/holidays & HolidaysController & Returns combined Philippine and Danish holiday schedule. \\
+\addlinespace
+POST /api/holidays & HolidaysController & Adds custom company calendar event or working day exception. \\
+\midrule
+
+\multicolumn{3}{l}{\textit{\textbf{Policies \& Compliance (\texttt{PoliciesController})}}} \\
+\addlinespace
+GET  /api/policies & PoliciesController & Lists active corporate policies and acknowledgement mandates. \\
+\addlinespace
+POST /api/policies/\{id\}/acknowledge & PoliciesController & Logs employee timestamped policy compliance acknowledgement. \\
+\end{xltabular}
+
+% ==========================================
+% SECTION 6: EXECUTION \& RUN GUIDE
+% ==========================================
+\section{Deployment \& Execution Guide}
+
+\subsection{Fastest Command to Run the Backend}
+
+The backend API can be launched with a single command from the project root:
+
+\begin{lstlisting}[language=bash]
+# Option A: Via npm script defined in package.json
+npm run start:backend
+
+# Option B: Direct .NET 8 CLI execution
+dotnet run --project backend/src/EmployeeHub.Api --launch-profile http
+\end{lstlisting}
+
+\begin{tipbox}[Zero-Config SQLite Initialization]
+When launched using the \texttt{http} profile, the API binds to \textbf{\url{http://localhost:5000}} and immediately provisions the local SQLite database (\texttt{employee\_hub.db}) complete with pre-seeded personas, departments, policies, and tickets. No database installation is required.
+\end{tipbox}
+
+\subsection{Running the Complete Stack Locally}
+
+To run both backend and frontend concurrently for local development:
+
+\begin{enumerate}
+    \item \textbf{Start the Backend API}:
+    \begin{lstlisting}[language=bash]
+    npm run start:backend
+    \end{lstlisting}
+    API is live at \url{http://localhost:5000}; Swagger UI at \url{http://localhost:5000/swagger}.
+
+    \item \textbf{Start the React Frontend}:
+    In a separate terminal window:
+    \begin{lstlisting}[language=bash]
+    npm --prefix frontend run dev
+    \end{lstlisting}
+    The Vite dev server will launch at \textbf{\url{http://localhost:5173}}.
+\end{enumerate}
+
+\subsection{Full-Stack Production Deployment with Docker Compose}
+
+For staging or production deployments running PostgreSQL 16:
+
+\begin{lstlisting}[language=bash]
+docker compose up --build
+\end{lstlisting}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Service} & \textbf{External Address} & \textbf{Internal Architecture} \\
+\midrule
+\textbf{Frontend Web} & \url{http://localhost:8080} & Nginx Alpine serving optimized React production bundle with reverse-proxy. \\
+\textbf{Backend API} & \url{http://localhost:5000} & ASP.NET Core 8 Alpine container running in \texttt{Development} mode. \\
+\textbf{Database Engine} & \texttt{localhost:5432} & PostgreSQL 16 Alpine container with persistent named volume \texttt{pgdata}. \\
+\bottomrule
+\end{tabularx}
+\caption{Docker Compose Service Endpoints}
+\end{table}
+
+% ==========================================
+% SECTION 7: CROSS-BORDER WORKFORCE WORKFLOWS
+% ==========================================
+\section{Cross-Border Operational Workflows}
+
+\subsection{Danish-Philippine Operational Alignment}
+The system specifically addresses the logistical challenges of offshore software teams dedicated to Danish client operations:
+
+\begin{itemize}
+    \item \textbf{Dual Operations Calendar}:
+    Displays simultaneous Philippine and Danish public holidays side-by-side. Highlights \textit{Special Working Holidays} and non-overlapping days where coverage planning is critical (e.g., Danish \textit{Store Bededag} or Philippine \textit{Araw ng Kagitingan}).
+    \item \textbf{Hardware Custody Receipts}:
+    Maintains transparent custody records of premium corporate hardware issued to offshore developers (asset serial tags, MacBook model numbers, delivery dates, and return condition logs).
+    \item \textbf{Statutory Remittance \& HR Requests}:
+    Dedicated routing for Philippine legal compliance tickets (Certificate of Employment requests, SSS, PhilHealth, Pag-IBIG inquiries, and tax form 2316 processing).
+    \item \textbf{Client Dedicated Isolation}:
+    Engineers dedicated to Danish clients are restricted from viewing other client teams or internal departmental ticketing queues, ensuring strict client confidentiality.
+\end{itemize}
+
+% ==========================================
+% SECTION 8: RECOMPILATION \& MAINTENANCE
+% ==========================================
+\section{Documentation Compilation \& Maintenance}
+
+This documentation is maintained in LaTeX format (\texttt{documentation/main.tex}). To recompile into PDF format:
+
+\begin{lstlisting}[language=bash]
+# Recompile using pdflatex from the documentation folder:
+cd documentation
+pdflatex -interaction=nonstopmode main.tex
+pdflatex -interaction=nonstopmode main.tex   # Run twice to resolve TOC references
+
+# Or using latexmk (automated multi-pass):
+latexmk -pdf main.tex
+\end{lstlisting}
+
+\begin{infobox}[Document Summary]
+\textbf{Document Name}: \texttt{main.tex} $\rightarrow$ \texttt{main.pdf} \\
+\textbf{Output Directory}: \texttt{proposal-employee-hub/documentation/} \\
+\textbf{Maintainer}: Enterprise Operations Hub Core Team
+\end{infobox}
+
+\end{document}

@@ -5,6 +5,9 @@ namespace EmployeeHub.Api.Models.Entities;
 public class Employee
 {
     public int Id { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string MiddleName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string WorkEmail { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;

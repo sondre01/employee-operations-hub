@@ -34,6 +34,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Employee>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.FirstName).HasMaxLength(100);
+            entity.Property(e => e.MiddleName).HasMaxLength(100);
+            entity.Property(e => e.LastName).HasMaxLength(100);
             entity.Property(e => e.FullName).IsRequired().HasMaxLength(150);
             entity.Property(e => e.WorkEmail).IsRequired().HasMaxLength(150);
             entity.HasIndex(e => e.WorkEmail).IsUnique();

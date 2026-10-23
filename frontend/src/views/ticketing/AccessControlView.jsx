@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ShieldCheck,
+  UserCheck,
+  Edit3,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Search,
+  Building2,
+  Lock,
+  Save,
+  X
+} from 'lucide-react';
 
 export default function AccessControlView() {
   const { currentUser, isSuperAdmin, canAssignEmployees } = useAuth();
@@ -8,6 +22,7 @@ export default function AccessControlView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Editing state
   const [editingEmp, setEditingEmp] = useState(null);
@@ -98,263 +113,375 @@ export default function AccessControlView() {
     }
   };
 
-  if (loading) return <div>Loading employee RBAC roster...</div>;
+  const filteredEmployees = employees.filter((emp) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      emp.fullName?.toLowerCase().includes(q) ||
+      emp.workEmail?.toLowerCase().includes(q) ||
+      emp.departmentName?.toLowerCase().includes(q) ||
+      emp.jobTitle?.toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div>
-            <h2 style={{ margin: 0 }}>Access Control &amp; RBAC Management</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <ShieldCheck className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Access Control &amp; RBAC Management
+            </h1>
           </div>
-          <button className="btn" onClick={loadData}>Refresh Roster</button>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Grant operational ticketing desk privileges, assign department resolver queues, and delegate staff onboarding rights.
+          </p>
         </div>
 
-        {/* Sub-tabs */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('roster')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'roster' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'roster' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'roster' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            🔐 Access Roster ({employees.length})
-          </button>
-
-          {editingEmp && (
+        {/* Tab & Refresh */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
             <button
               type="button"
-              onClick={() => setActiveTab('edit')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: activeTab === 'edit' ? 600 : 400,
-                border: 'none',
-                background: 'none',
-                borderBottom: activeTab === 'edit' ? '2px solid #0366d6' : '2px solid transparent',
-                color: activeTab === 'edit' ? '#0366d6' : '#586069',
-                cursor: 'pointer'
-              }}
+              onClick={() => setActiveTab('roster')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'roster'
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
             >
-              ✏️ Edit Access: {editingEmp.fullName}
+              Access Roster ({employees.length})
             </button>
-          )}
+            {editingEmp && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('edit')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'edit'
+                    ? 'bg-[#13264C] text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                Edit: {editingEmp.fullName.split(' ')[0]}
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={loadData}
+            className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 shadow-2xs cursor-pointer"
+            title="Refresh Roster"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {error && <div className="card" style={{ backgroundColor: '#ffeef0', borderColor: '#f97583', color: '#86181d', marginBottom: '12px' }}>{error}</div>}
-        {success && <div className="card" style={{ backgroundColor: '#dcffe4', borderColor: '#56d364', color: '#165c26', marginBottom: '12px' }}>{success}</div>}
+      {/* Notifications */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{success}</span>
+            </div>
+            <button type="button" onClick={() => setSuccess('')} className="cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button type="button" onClick={() => setError('')} className="cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Tab 1: Employees Roster Table */}
-        {activeTab === 'roster' && (
-          <div className="card" style={{ margin: 0, padding: 0, overflow: 'hidden' }}>
-            <table className="table" style={{ width: '100%', margin: 0 }}>
-              <thead>
-                <tr>
-                  <th>Employee Name &amp; Email</th>
-                  <th>Class</th>
-                  <th>Company Role</th>
-                  <th>Department</th>
-                  <th>Ticketing Role</th>
-                  <th>Desk Access</th>
-                  <th>Delegation Perm</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp) => (
-                  <tr key={emp.id}>
-                    <td>
-                      <strong>{emp.fullName}</strong>
-                      <div style={{ fontSize: '11px', color: '#666' }}>{emp.workEmail}</div>
-                    </td>
-                    <td>
-                      <span className={`badge ${emp.isInternal ? 'badge-internal' : 'badge-external'}`}>
-                        {emp.isInternal ? 'Internal' : 'External'}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '12px' }}>{emp.jobTitle}</td>
-                    <td>
-                      {emp.departmentName ? (
-                        <span style={{ fontWeight: 600 }}>{emp.departmentName}</span>
-                      ) : (
-                        <span style={{ color: '#999' }}>None</span>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        padding: '2px 6px',
-                        borderRadius: '3px',
-                        backgroundColor: emp.ticketingRole === 'SuperAdmin' ? '#f1e05a' : emp.ticketingRole === 'DevOpsAdmin' ? '#cbe8ff' : '#e1e4e8',
-                        color: '#24292e'
-                      }}>
-                        {emp.ticketingRole}
-                      </span>
-                    </td>
-                    <td>
-                      {emp.hasTicketingAccess ? (
-                        <span style={{ color: '#28a745', fontWeight: 'bold' }}>✓ Permitted</span>
-                      ) : (
-                        <span style={{ color: '#cb2431' }}>✗ Denied</span>
-                      )}
-                    </td>
-                    <td>
-                      {emp.canAssignEmployees ? (
-                        <span style={{ color: '#0366d6', fontWeight: 600 }}>Can Assign</span>
-                      ) : (
-                        <span style={{ color: '#999' }}>No</span>
-                      )}
-                    </td>
-                    <td>
-                      {(isSuperAdmin || canAssignEmployees) && (
-                        <button
-                          className="btn"
-                          style={{ padding: '3px 8px', fontSize: '11px' }}
-                          onClick={() => handleEditClick(emp)}
-                        >
-                          Edit Access
-                        </button>
-                      )}
-                    </td>
+      {/* TAB 1: Access Roster */}
+      {activeTab === 'roster' && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
+          {/* Search Toolbar */}
+          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Search staff, role, email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] text-zinc-900 font-medium"
+              />
+            </div>
+
+            <div className="text-xs text-zinc-500 font-medium">
+              Showing <strong>{filteredEmployees.length}</strong> registered identities
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+              Loading employee RBAC roster...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-4">Class</th>
+                    <th className="py-3 px-4">Position</th>
+                    <th className="py-3 px-4">Department</th>
+                    <th className="py-3 px-4">Operational Role</th>
+                    <th className="py-3 px-4">Desk Access</th>
+                    <th className="py-3 px-4">Delegation</th>
+                    {(isSuperAdmin || canAssignEmployees) && (
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
+                  {filteredEmployees.map((emp) => (
+                    <tr key={emp.id} className="hover:bg-zinc-50/80 transition-colors">
+                      <td className="py-3 px-4 flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-[#13264C] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                          {emp.fullName[0] || 'U'}
+                        </div>
+                        <div>
+                          <div className="font-bold text-zinc-950">{emp.fullName}</div>
+                          <div className="font-mono text-[10px] text-zinc-500">{emp.workEmail}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                            emp.isInternal
+                              ? 'bg-[#13264C]/10 text-[#13264C] border-[#13264C]/20'
+                              : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                          }`}
+                        >
+                          {emp.isInternal ? 'Internal Core' : 'External Client'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-700">{emp.jobTitle}</td>
+                      <td className="py-3 px-4">
+                        {emp.departmentName ? (
+                          <span className="font-semibold text-zinc-900">{emp.departmentName}</span>
+                        ) : (
+                          <span className="text-zinc-400 italic">None</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                            emp.ticketingRole === 'SuperAdmin'
+                              ? 'bg-[#D61766]/10 text-[#D61766] border-[#D61766]/20'
+                              : emp.ticketingRole === 'DevOpsAdmin'
+                              ? 'bg-[#13264C]/10 text-[#13264C] border-[#13264C]/20'
+                              : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                          }`}
+                        >
+                          {emp.ticketingRole}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {emp.hasTicketingAccess ? (
+                          <span className="inline-flex items-center gap-1 font-bold text-emerald-700">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Permitted
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-zinc-400">
+                            <XCircle className="w-3.5 h-3.5" />
+                            Locked
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {emp.canAssignEmployees ? (
+                          <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#13264C]/10 text-[#13264C]">
+                            Can Assign
+                          </span>
+                        ) : (
+                          <span className="text-zinc-400 text-xs">—</span>
+                        )}
+                      </td>
+                      {(isSuperAdmin || canAssignEmployees) && (
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleEditClick(emp)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-[#13264C] bg-[#13264C]/10 hover:bg-[#13264C]/20 cursor-pointer transition-colors"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Edit Access</span>
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Tab 2: Edit Access Form */}
-        {activeTab === 'edit' && editingEmp && (
-          <div className="card" style={{ backgroundColor: '#fafbfc', border: '1px solid #d1d5da', margin: 0 }}>
-            <h3 style={{ marginTop: 0 }}>
-              Modify Access: {editingEmp.fullName} ({editingEmp.workEmail})
-            </h3>
-            <p style={{ fontSize: '12px', color: '#586069' }}>
-              Role in Organization: <strong>{editingEmp.jobTitle}</strong> | Type: <strong>{editingEmp.isInternal ? 'Internal' : 'External Client-Dedicated'}</strong>
-            </p>
-
-            <form onSubmit={handleSave}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
-                    Employment Classification:
-                  </label>
-                  <select
-                    value={formIsInternal ? 'internal' : 'external'}
-                    onChange={(e) => {
-                      const isInt = e.target.value === 'internal';
-                      setFormIsInternal(isInt);
-                      if (!isInt) {
-                        setFormDeptId('');
-                        setFormHasAccess(false);
-                        setFormRole('None');
-                      }
-                    }}
-                    style={{ width: '100%', padding: '6px' }}
-                  >
-                    <option value="external">External (Client-Dedicated)</option>
-                    <option value="internal">Internal Core Staff (Company Operations)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
-                    Assigned Department:
-                  </label>
-                  <select
-                    value={formDeptId}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormDeptId(val);
-                      if (val) {
-                        setFormIsInternal(true);
-                      }
-                    }}
-                    style={{ width: '100%', padding: '6px' }}
-                  >
-                    <option value="">-- No Department Assigned --</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
-                    Ticketing System Role:
-                  </label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => {
-                      const r = e.target.value;
-                      setFormRole(r);
-                      if (r !== 'None') {
-                        setFormHasAccess(true);
-                      }
-                    }}
-                    style={{ width: '100%', padding: '6px' }}
-                  >
-                    <option value="None">None (Standard Employee Only)</option>
-                    <option value="DepartmentMember">Department Member (Queue Resolver)</option>
-                    <option value="DepartmentManager">Department Manager (Team Lead)</option>
-                    <option value="DevOpsAdmin">DevOps Member (Queue Admin)</option>
-                    {isSuperAdmin && <option value="SuperAdmin">Super Admin (DevOps Manager - Full System)</option>}
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '8px' }}>
-                    <input
-                      type="checkbox"
-                      checked={formHasAccess}
-                      onChange={(e) => setFormHasAccess(e.target.checked)}
-                    />
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>Grant Ticketing Desk Access</span>
-                  </label>
-
-                  {isSuperAdmin && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={formCanAssign}
-                        onChange={(e) => setFormCanAssign(e.target.checked)}
-                      />
-                      <span style={{ fontSize: '13px', color: '#0366d6', fontWeight: 600 }}>Allow Employee RBAC Delegation</span>
-                    </label>
-                  )}
-                </div>
+      {/* TAB 2: Edit Access Form */}
+      {activeTab === 'edit' && editingEmp && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+                <Lock className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+                  Modify Privileges: {editingEmp.fullName}
+                </h3>
+                <div className="font-mono text-xs text-zinc-500 mt-0.5">{editingEmp.workEmail}</div>
               </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setEditingEmp(null); setActiveTab('roster'); }}
+              className="text-zinc-400 hover:text-zinc-700 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Permissions'}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    setEditingEmp(null);
-                    setActiveTab('roster');
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Employment Classification
+                </label>
+                <select
+                  value={formIsInternal ? 'internal' : 'external'}
+                  onChange={(e) => {
+                    const isInt = e.target.value === 'internal';
+                    setFormIsInternal(isInt);
+                    if (!isInt) {
+                      setFormDeptId('');
+                      setFormHasAccess(false);
+                      setFormRole('None');
+                    }
                   }}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
                 >
-                  Cancel
-                </button>
+                  <option value="external">External (Client-Dedicated)</option>
+                  <option value="internal">Internal Core Staff (Company Operations)</option>
+                </select>
               </div>
-            </form>
-          </div>
-        )}
-      </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Assigned Department
+                </label>
+                <select
+                  value={formDeptId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormDeptId(val);
+                    if (val) setFormIsInternal(true);
+                  }}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+                >
+                  <option value="">-- No Department Assigned --</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Ticketing System Role
+              </label>
+              <select
+                value={formRole}
+                onChange={(e) => {
+                  const r = e.target.value;
+                  setFormRole(r);
+                  if (r !== 'None') setFormHasAccess(true);
+                }}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"
+              >
+                <option value="None">None (Standard Employee Only)</option>
+                <option value="DepartmentMember">Department Member (Queue Resolver)</option>
+                <option value="DepartmentManager">Department Manager (Team Lead)</option>
+                <option value="DevOpsAdmin">DevOps Member (Queue Admin)</option>
+                {isSuperAdmin && <option value="SuperAdmin">Super Admin (DevOps Manager - Full System)</option>}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2 p-3 bg-zinc-50 rounded-xl border border-zinc-200/80">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formHasAccess}
+                  onChange={(e) => setFormHasAccess(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#13264C] focus:ring-[#13264C]"
+                />
+                <span className="text-xs font-bold text-zinc-900">Grant Operational Desk Access</span>
+              </label>
+
+              {isSuperAdmin && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formCanAssign}
+                    onChange={(e) => setFormCanAssign(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#13264C] focus:ring-[#13264C]"
+                  />
+                  <span className="text-xs font-bold text-[#13264C]">Allow Staff RBAC Delegation Permissions</span>
+                </label>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-xs cursor-pointer transition-all disabled:opacity-60"
+              >
+                <Save className="w-4 h-4" />
+                <span>{saving ? 'Saving...' : 'Save Privileges'}</span>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => { setEditingEmp(null); setActiveTab('roster'); }}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

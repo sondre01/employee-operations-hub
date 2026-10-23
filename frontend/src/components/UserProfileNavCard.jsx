@@ -1,57 +1,44 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { LogOut, Shield } from 'lucide-react';
 
 export default function UserProfileNavCard() {
   const { currentUser, logout } = useAuth();
   if (!currentUser) return null;
 
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        borderTop: '1px solid #e1e4e8',
-        backgroundColor: '#ffffff',
-        padding: '12px 14px',
-        boxSizing: 'border-box'
-      }}
-    >
-      <div style={{ fontSize: '12px', fontWeight: 600, color: '#1e293b', marginBottom: '2px', wordBreak: 'break-word' }}>
-        {currentUser.fullName}{' '}
-        <span style={{ fontWeight: 400, color: '#64748b', fontSize: '11px' }}>
-          ({currentUser.workEmail})
-        </span>
+    <div className="shrink-0 border-t border-zinc-200 bg-zinc-50/80 p-3 box-border">
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="w-8 h-8 rounded-full bg-[#13264C] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+          {(currentUser.fullName ? currentUser.fullName[0] : 'U').toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-bold text-zinc-900 truncate">
+            {currentUser.fullName}
+          </div>
+          <div className="text-[10px] text-zinc-500 truncate">
+            {currentUser.workEmail}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', marginTop: '4px', marginBottom: '10px' }}>
-        <span className={`badge ${currentUser.isInternal ? 'badge-internal' : 'badge-external'}`}>
+      <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold border bg-zinc-100 text-zinc-800 border-zinc-200">
           {currentUser.isInternal ? 'Internal Core' : 'External Client'}
         </span>
-        <span style={{ fontSize: '11px', color: '#475569' }}>
+        <span className="text-[10px] text-zinc-500 truncate">
           {currentUser.departmentName || 'External Team'}
-        </span>
-        <span style={{ color: '#94a3b8' }}>&bull;</span>
-        <span style={{ fontWeight: 600, color: '#0366d6', fontSize: '11px' }}>
-          {currentUser.ticketingRole}
         </span>
       </div>
 
       <button
         type="button"
         onClick={logout}
-        className="btn"
-        style={{
-          width: '100%',
-          background: '#ffeef0',
-          borderColor: '#f97583',
-          color: '#cb2431',
-          fontWeight: 600,
-          fontSize: '11px',
-          padding: '5px 8px',
-          cursor: 'pointer'
-        }}
-        title="Sign out of this session"
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-[0.98]"
+        title="Sign out of session"
       >
-        Sign Out
+        <LogOut className="w-3 h-3" />
+        <span>Sign Out</span>
       </button>
     </div>
   );

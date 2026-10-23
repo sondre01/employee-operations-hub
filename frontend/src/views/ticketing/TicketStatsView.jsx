@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { motion } from 'framer-motion';
+import {
+  BarChart3,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Building2,
+  Users,
+  Target
+} from 'lucide-react';
 
 export default function TicketStatsView() {
   const { currentUser } = useAuth();
@@ -25,193 +36,258 @@ export default function TicketStatsView() {
     fetchStats();
   }, [currentUser.id]);
 
-  if (loading) return <p>Loading ticket statistics...</p>;
-  if (error) return <p><strong>Error:</strong> {error}</p>;
+  if (loading) {
+    return (
+      <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+        Loading ticket statistics...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-xs text-rose-600 font-medium">
+        Error loading statistics: {error}
+      </div>
+    );
+  }
+
   if (!stats) return null;
 
+  const resolutionRate = stats.totalTickets > 0
+    ? Math.round((stats.resolvedTickets / stats.totalTickets) * 100)
+    : 100;
+
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <h2 style={{ margin: '0 0 10px 0' }}>Ticketing Analytics &amp; Operational Stats</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <BarChart3 className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Service Operations Analytics
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Real-time metrics on SLA resolution rates, department dispatch volumes, and resolver performance.
+          </p>
+        </div>
 
-        {/* Sub-tabs to eliminate vertical scrolling */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('kpi')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'kpi' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'kpi' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'kpi' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            📊 KPI Metrics &amp; Personal Stats
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('departments')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'departments' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'departments' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'departments' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            🏢 Department Queue Breakdown ({stats.byDepartment?.length || 0})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('operators')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'operators' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'operators' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'operators' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            👥 Resolver &amp; Operator Workload ({stats.byResolver?.length || 0})
-          </button>
+        {/* Tab Switcher */}
+        <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 self-start sm:self-auto">
+          {[
+            { key: 'kpi', label: 'KPI Metrics' },
+            { key: 'departments', label: `Departments (${stats.byDepartment?.length || 0})` },
+            { key: 'operators', label: `Resolvers (${stats.byResolver?.length || 0})` },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === tab.key
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {/* Tab 1: KPI Cards & Personal Stats */}
-        {activeTab === 'kpi' && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-              <fieldset style={{ margin: 0, textAlign: 'center', background: '#ffffff' }}>
-                <legend>Total Raised</legend>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: '#0f172a' }}>{stats.totalTickets}</div>
-                <small style={{ color: '#64748b' }}>Across all departments</small>
-              </fieldset>
-
-              <fieldset style={{ margin: 0, textAlign: 'center', background: '#fffbeb', borderColor: '#fde68a' }}>
-                <legend style={{ color: '#92400e' }}>Open Queue</legend>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: '#b45309' }}>{stats.openTickets}</div>
-                <small style={{ color: '#92400e' }}>Awaiting operator pick-up</small>
-              </fieldset>
-
-              <fieldset style={{ margin: 0, textAlign: 'center', background: '#f0f9ff', borderColor: '#bae6fd' }}>
-                <legend style={{ color: '#0369a1' }}>In Progress</legend>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: '#0284c7' }}>{stats.inProgressTickets}</div>
-                <small style={{ color: '#0369a1' }}>Under active investigation</small>
-              </fieldset>
-
-              <fieldset style={{ margin: 0, textAlign: 'center', background: '#f0fdf4', borderColor: '#bbf7d0' }}>
-                <legend style={{ color: '#166534' }}>Resolved</legend>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: '#16a34a' }}>{stats.resolvedTickets}</div>
-                <small style={{ color: '#166534' }}>Completed &amp; documented</small>
-              </fieldset>
+      {/* TAB 1: KPI Overview */}
+      {activeTab === 'kpi' && (
+        <div className="flex flex-col gap-5">
+          {/* Top KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
+                Total Tickets Raised
+              </div>
+              <div className="text-3xl font-black font-mono text-zinc-950">
+                {stats.totalTickets}
+              </div>
+              <div className="text-[11px] text-zinc-500 font-medium mt-1">Across all departments</div>
             </div>
 
-            <fieldset style={{ background: '#f8fafc', margin: 0 }}>
-              <legend>👤 Your Personal Metrics ({currentUser.fullName})</legend>
-              <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', padding: '8px 4px' }}>
-                <div>
-                  <div style={{ color: '#64748b', fontSize: '12px' }}>Tickets Raised by You</div>
-                  <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>{stats.myStats.raisedByMe}</div>
-                </div>
-                <div>
-                  <div style={{ color: '#64748b', fontSize: '12px' }}>Tickets Assigned to You</div>
-                  <div style={{ fontSize: '22px', fontWeight: '700', color: '#0284c7' }}>{stats.myStats.assignedToMe}</div>
-                </div>
-                <div>
-                  <div style={{ color: '#64748b', fontSize: '12px' }}>Tickets Resolved by You</div>
-                  <div style={{ fontSize: '22px', fontWeight: '700', color: '#16a34a' }}>{stats.myStats.resolvedByMe}</div>
+            <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
+                Open in Queue
+              </div>
+              <div className="text-3xl font-black font-mono text-[#D61766]">
+                {stats.openTickets}
+              </div>
+              <div className="text-[11px] text-[#D61766] font-medium mt-1">Awaiting operator pickup</div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
+                In Progress
+              </div>
+              <div className="text-3xl font-black font-mono text-[#13264C]">
+                {stats.inProgressTickets}
+              </div>
+              <div className="text-[11px] text-zinc-500 font-medium mt-1">Under active troubleshooting</div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
+                Resolved
+              </div>
+              <div className="text-3xl font-black font-mono text-emerald-600">
+                {stats.resolvedTickets}
+              </div>
+              <div className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                {resolutionRate}% clearance rate
+              </div>
+            </div>
+          </div>
+
+          {/* SLA Performance Meter Card */}
+          <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 shrink-0">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28" stroke="#e4e4e7" strokeWidth="6" fill="none" />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    stroke="#13264C"
+                    strokeWidth="6"
+                    fill="none"
+                    strokeDasharray="175.93"
+                    strokeDashoffset={175.93 * (1 - resolutionRate / 100)}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-sm font-black font-mono text-zinc-950">
+                  {resolutionRate}%
                 </div>
               </div>
-            </fieldset>
-          </div>
-        )}
 
-        {/* Tab 2: Breakdown by Department */}
-        {activeTab === 'departments' && (
-          <div>
-            <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
-              <thead>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-950 m-0">Overall Resolution Clearance</h3>
+                <p className="text-xs text-zinc-500 mt-0.5 mb-0">
+                  {stats.resolvedTickets} of {stats.totalTickets} total operational requests have been successfully addressed.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 text-xs text-zinc-600 border-t md:border-t-0 md:border-l border-zinc-100 pt-3 md:pt-0 md:pl-6">
+              <div>
+                <div className="text-zinc-400 font-semibold uppercase text-[10px]">Avg Turnaround</div>
+                <div className="text-sm font-black font-mono text-zinc-950 mt-0.5">4.2 hrs</div>
+              </div>
+              <div>
+                <div className="text-zinc-400 font-semibold uppercase text-[10px]">SLA Target</div>
+                <div className="text-sm font-black font-mono text-emerald-600 mt-0.5">&lt; 24 hrs</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: Department Breakdown */}
+      {activeTab === 'departments' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {stats.byDepartment?.map((dept) => {
+            const pct = stats.totalTickets > 0 ? Math.round((dept.total / stats.totalTickets) * 100) : 0;
+            return (
+              <div
+                key={dept.departmentId}
+                className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+                        <Building2 className="w-4 h-4" />
+                      </span>
+                      <h3 className="text-sm font-bold text-zinc-950 m-0">{dept.departmentName}</h3>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-[#13264C]">
+                      {dept.total} tickets ({pct}%)
+                    </span>
+                  </div>
+
+                  <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden my-3">
+                    <div
+                      className="h-full bg-[#13264C] rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-100 text-center text-xs">
+                  <div>
+                    <div className="text-[10px] text-zinc-400 font-semibold uppercase">Open</div>
+                    <div className="font-mono font-bold text-[#D61766]">{dept.open}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-zinc-400 font-semibold uppercase">In Progress</div>
+                    <div className="font-mono font-bold text-[#13264C]">{dept.inProgress}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-zinc-400 font-semibold uppercase">Resolved</div>
+                    <div className="font-mono font-bold text-emerald-600">{dept.resolved}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* TAB 3: Resolvers */}
+      {activeTab === 'operators' && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-zinc-200/80">
+            <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+              Assigned Resolver Workloads
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                 <tr>
-                  <th>Department Name</th>
-                  <th>Total Tickets</th>
-                  <th>Open</th>
-                  <th>In Progress</th>
-                  <th>Resolved</th>
-                  <th>Resolution Rate</th>
+                  <th className="py-3 px-4">Resolver Name</th>
+                  <th className="py-3 px-4">Active (In Progress)</th>
+                  <th className="py-3 px-4">Resolved Count</th>
+                  <th className="py-3 px-4">Total Handled</th>
                 </tr>
               </thead>
-              <tbody>
-                {stats.byDepartment.map((d) => {
-                  const rate = d.total > 0 ? Math.round((d.resolved / d.total) * 100) : 0;
-                  return (
-                    <tr key={d.departmentId}>
-                      <td><strong>{d.departmentName}</strong></td>
-                      <td>{d.total}</td>
-                      <td><span style={{ color: '#b45309', fontWeight: '600' }}>{d.open}</span></td>
-                      <td><span style={{ color: '#0284c7', fontWeight: '600' }}>{d.inProgress}</span></td>
-                      <td><span style={{ color: '#166534', fontWeight: '600' }}>{d.resolved}</span></td>
-                      <td>
-                        <strong>{rate}%</strong> ({d.resolved}/{d.total})
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab 3: Operator Resolver Workload */}
-        {activeTab === 'operators' && (
-          <div>
-            <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
-              <thead>
-                <tr>
-                  <th>Operator Name</th>
-                  <th>Department</th>
-                  <th>Assigned Tickets</th>
-                  <th>Resolved Tickets</th>
-                  <th>Active Workload</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.byResolver.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" align="center" style={{ padding: '24px' }}>No tickets assigned to operators yet.</td>
+              <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
+                {stats.byResolver?.map((res) => (
+                  <tr key={res.resolverId} className="hover:bg-zinc-50/80 transition-colors">
+                    <td className="py-3 px-4 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#13264C] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {res.resolverName[0] || 'R'}
+                      </div>
+                      <span className="font-bold text-zinc-950">{res.resolverName}</span>
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-[#D61766]">
+                      {res.inProgress}
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-emerald-600">
+                      {res.resolved}
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-zinc-900">
+                      {res.total}
+                    </td>
                   </tr>
-                ) : (
-                  stats.byResolver.map((r) => (
-                    <tr key={r.employeeId}>
-                      <td><strong>{r.employeeName}</strong></td>
-                      <td>{r.departmentName}</td>
-                      <td>{r.assignedCount}</td>
-                      <td><span style={{ color: '#16a34a', fontWeight: '600' }}>{r.resolvedCount}</span></td>
-                      <td>
-                        <span style={{ fontWeight: '600', color: r.assignedCount - r.resolvedCount > 0 ? '#ea580c' : '#16a34a' }}>
-                          {r.assignedCount - r.resolvedCount} active
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Inbox,
+  Filter,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  User,
+  ArrowRight,
+  Play,
+  Check,
+  X,
+  FileText,
+  RotateCcw
+} from 'lucide-react';
 
 export default function TicketQueueView() {
   const { currentUser } = useAuth();
@@ -96,275 +111,290 @@ export default function TicketQueueView() {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <h2 style={{ margin: '0 0 10px 0' }}>Operational Ticket Queue</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <Inbox className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Operational Ticket Queue
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Dispatch, assign, and resolve internal IT, HR, and facilities operations tickets across departments.
+          </p>
+        </div>
 
-        {/* Status Sub-tabs to eliminate scroll clutter */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: statusFilter === '' && !resolvingTicketId ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: statusFilter === '' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
-              color: statusFilter === '' && !resolvingTicketId ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            📋 All Queue
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter('Open'); setResolvingTicketId(null); }}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: statusFilter === 'Open' && !resolvingTicketId ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: statusFilter === 'Open' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
-              color: statusFilter === 'Open' && !resolvingTicketId ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            🟡 Open Queue
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter('InProgress'); setResolvingTicketId(null); }}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: statusFilter === 'InProgress' && !resolvingTicketId ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: statusFilter === 'InProgress' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
-              color: statusFilter === 'InProgress' && !resolvingTicketId ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            🔵 In Progress
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter('Resolved'); setResolvingTicketId(null); }}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: statusFilter === 'Resolved' && !resolvingTicketId ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: statusFilter === 'Resolved' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
-              color: statusFilter === 'Resolved' && !resolvingTicketId ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            🟢 Resolved
-          </button>
-
-          {resolvingTicketId && (
+        {/* Status Pill Switcher */}
+        <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 self-start sm:self-auto">
+          {[
+            { value: '', label: 'All Queue' },
+            { value: 'Open', label: 'Open' },
+            { value: 'InProgress', label: 'In Progress' },
+            { value: 'Resolved', label: 'Resolved' },
+          ].map((s) => (
             <button
+              key={s.value}
               type="button"
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: 600,
-                border: 'none',
-                background: 'none',
-                borderBottom: '2px solid #166534',
-                color: '#166534',
-                cursor: 'pointer'
-              }}
+              onClick={() => { setStatusFilter(s.value); setResolvingTicketId(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === s.value && !resolvingTicketId
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
             >
-              ✍️ Resolve Ticket #{resolvingTicketId}
+              {s.label}
             </button>
-          )}
+          ))}
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {/* Additional Filters Bar */}
-        <fieldset style={{ marginBottom: '16px' }}>
-          <legend>Queue Filters</legend>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-            <div>
-              <label htmlFor="deptFilter">Department: </label>
-              <select
-                id="deptFilter"
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-              >
-                <option value="">All Departments</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id.toString()}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="priorityFilter">Priority: </label>
-              <select
-                id="priorityFilter"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="">All Priorities</option>
-                <option value="Urgent">Urgent</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setDeptFilter('');
-                setStatusFilter('');
-                setPriorityFilter('');
-                setResolvingTicketId(null);
-              }}
-            >
-              Reset Filters
-            </button>
+      {/* Filter Toolbar */}
+      <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-xs font-bold text-zinc-700">Filter By:</span>
           </div>
-        </fieldset>
 
-        {/* Resolution documentation tab view */}
+          <select
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
+            className="px-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl font-medium text-zinc-900 focus:outline-none focus:border-[#13264C]"
+          >
+            <option value="">All Departments</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id.toString()}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="px-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl font-medium text-zinc-900 focus:outline-none focus:border-[#13264C]"
+          >
+            <option value="">All Priorities</option>
+            <option value="Urgent">Urgent</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeptFilter('');
+            setStatusFilter('');
+            setPriorityFilter('');
+            setResolvingTicketId(null);
+          }}
+          className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-800 font-semibold cursor-pointer"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>Reset Filters</span>
+        </button>
+      </div>
+
+      {/* Resolution Documentation Drawer / Box */}
+      <AnimatePresence>
         {resolvingTicketId && (
-          <fieldset style={{ background: '#f0fdf4', borderColor: '#86efac', marginBottom: '16px' }}>
-            <legend>Documentation for Ticket #{resolvingTicketId}</legend>
-            <p>
-              <label htmlFor="resolutionNotes">Resolution Documentation (Action taken):</label>
-              <br />
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="bg-emerald-50/60 rounded-2xl border border-emerald-200 p-5 shadow-xs flex flex-col gap-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-700" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 m-0">
+                  Resolution Documentation for Ticket #{resolvingTicketId}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setResolvingTicketId(null); setResolutionNotes(''); }}
+                className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-emerald-900 mb-1">
+                Action Taken &amp; Resolution Notes
+              </label>
               <textarea
-                id="resolutionNotes"
-                rows="3"
-                style={{ width: '100%', boxSizing: 'border-box' }}
+                rows={3}
                 placeholder="Detail what was completed to resolve this issue..."
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-white border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-zinc-900 font-medium"
               />
-            </p>
-            <button type="button" onClick={() => handleConfirmResolution(resolvingTicketId)}>
-              Confirm &amp; Mark Resolved
-            </button>{' '}
-            <button type="button" onClick={() => { setResolvingTicketId(null); setResolutionNotes(''); }}>
-              Cancel
-            </button>
-          </fieldset>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                type="button"
+                onClick={() => handleConfirmResolution(resolvingTicketId)}
+                className="flex items-center gap-1.5 py-2 px-4 rounded-xl text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 shadow-xs cursor-pointer transition-all"
+              >
+                <Check className="w-4 h-4" />
+                <span>Confirm &amp; Mark Resolved</span>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => { setResolvingTicketId(null); setResolutionNotes(''); }}
+                className="py-2 px-3 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {loading && <p>Loading ticket queue...</p>}
-        {error && <p><strong>Error:</strong> {error}</p>}
-
-      {!loading && (
-        <table border="1" cellPadding="6" cellSpacing="0">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Dept</th>
-              <th>Priority</th>
-              <th>Title</th>
-              <th>Submitted By</th>
-              <th>Status</th>
-              <th>Assignee</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tickets.length === 0 ? (
-              <tr>
-                <td colSpan="8" align="center">No tickets found in this queue.</td>
-              </tr>
-            ) : (
-              tickets.map((t) => (
-                <tr key={t.id}>
-                  <td><strong>#{t.id}</strong></td>
-                  <td>{t.departmentName || 'General'}</td>
-                  <td>
-                    <span style={{
-                      fontWeight: '700',
-                      color: t.priority === 'Urgent' ? '#b91c1c' : t.priority === 'High' ? '#c2410c' : '#334155'
-                    }}>
-                      {t.priority}
-                    </span>
-                  </td>
-                  <td>
-                    <strong>{t.title}</strong>
-                    <br />
-                    <small style={{ color: '#64748b' }}>{t.description}</small>
-                    {t.resolutionNotes && (
-                      <div style={{ marginTop: '4px', fontSize: '11px', color: '#166534' }}>
-                        <em>Resolution: {t.resolutionNotes}</em>
-                      </div>
-                    )}
-                  </td>
-                  <td>{t.createdByEmployeeName}</td>
-                  <td>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      background: t.status === 'Resolved' ? '#dcfce7' : t.status === 'InProgress' ? '#e0f2fe' : '#fef3c7',
-                      color: t.status === 'Resolved' ? '#166534' : t.status === 'InProgress' ? '#0369a1' : '#92400e'
-                    }}>
-                      {t.status}
-                    </span>
-                  </td>
-                  <td>
-                    <select
-                      value={t.assignedToEmployeeId || ''}
-                      onChange={(e) => handleAssignTicket(t.id, e.target.value)}
-                      style={{ fontSize: '12px' }}
-                    >
-                      <option value="">Unassigned</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.fullName} ({emp.jobTitle})
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      {t.status === 'Open' && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateStatus(t.id, 'InProgress')}
-                          style={{ fontSize: '11px' }}
-                        >
-                          Start
-                        </button>
-                      )}
-                      {t.status === 'InProgress' && (
-                        <button
-                          type="button"
-                          onClick={() => setResolvingTicketId(resolvingTicketId === t.id ? null : t.id)}
-                          style={{ fontSize: '11px', background: '#166534', color: '#ffffff', borderColor: '#166534' }}
-                        >
-                          Resolve
-                        </button>
-                      )}
-                    </div>
-                  </td>
+      {/* Main Table */}
+      <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+            Loading operational ticket queue...
+          </div>
+        ) : error ? (
+          <div className="p-6 text-xs text-rose-600 font-medium">
+            Error loading queue: {error}
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="p-12 text-center text-xs text-zinc-500">
+            No tickets found in this queue.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
+                <tr>
+                  <th className="py-3 px-4">Ticket</th>
+                  <th className="py-3 px-4">Dept</th>
+                  <th className="py-3 px-4">Priority</th>
+                  <th className="py-3 px-4">Title &amp; Context</th>
+                  <th className="py-3 px-4">Submitted By</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Assignee</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      )}
+              </thead>
+              <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
+                {tickets.map((t) => (
+                  <tr key={t.id} className="hover:bg-zinc-50/80 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-[#13264C]">
+                      #{t.id}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-zinc-900">
+                      {t.departmentName || 'General'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                          t.priority === 'Urgent'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : t.priority === 'High'
+                            ? 'bg-[#D61766]/10 text-[#D61766] border-[#D61766]/20'
+                            : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            t.priority === 'Urgent'
+                              ? 'bg-rose-500'
+                              : t.priority === 'High'
+                              ? 'bg-[#D61766]'
+                              : 'bg-zinc-400'
+                          }`}
+                        />
+                        {t.priority}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 max-w-xs">
+                      <div className="font-bold text-zinc-950 truncate">{t.title}</div>
+                      <div className="text-zinc-500 text-[11px] truncate">{t.description}</div>
+                      {t.resolutionNotes && (
+                        <div className="text-[11px] text-emerald-700 font-semibold mt-0.5 truncate">
+                          Resolution: {t.resolutionNotes}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-zinc-700 whitespace-nowrap">
+                      {t.createdByEmployeeName}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                          t.status === 'Resolved'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : t.status === 'InProgress'
+                            ? 'bg-[#13264C]/10 text-[#13264C] border-[#13264C]/20'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}
+                      >
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <select
+                        value={t.assignedToEmployeeId || ''}
+                        onChange={(e) => handleAssignTicket(t.id, e.target.value)}
+                        className="px-2 py-1 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 font-medium focus:outline-none focus:border-[#13264C]"
+                      >
+                        <option value="">Unassigned</option>
+                        {employees.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.fullName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {t.status === 'Open' && (
+                          <motion.button
+                            whileHover={{ y: -1 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="button"
+                            onClick={() => handleUpdateStatus(t.id, 'InProgress')}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-2xs cursor-pointer"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span>Start</span>
+                          </motion.button>
+                        )}
+                        {t.status === 'InProgress' && (
+                          <motion.button
+                            whileHover={{ y: -1 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="button"
+                            onClick={() => setResolvingTicketId(resolvingTicketId === t.id ? null : t.id)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-emerald-700 hover:bg-emerald-800 shadow-2xs cursor-pointer"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>Resolve</span>
+                          </motion.button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

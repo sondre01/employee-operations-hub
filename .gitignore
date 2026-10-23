@@ -25,3 +25,12 @@ pgdata/
 # OS
 .DS_Store
 Thumbs.db
+
+# LaTeX build artifacts
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz

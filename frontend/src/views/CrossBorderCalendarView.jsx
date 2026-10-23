@@ -1,9 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Calendar,
+  Globe2,
+  PlusCircle,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Building2,
+  Clock,
+  Filter,
+  Send,
+  X
+} from 'lucide-react';
 
 export default function CrossBorderCalendarView() {
-  const { currentPersona } = useAuth();
+  const { currentPersona, currentUser } = useAuth();
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,6 +34,7 @@ export default function CrossBorderCalendarView() {
     notes: '',
   });
   const [formSuccess, setFormSuccess] = useState(null);
+  const [activeTab, setActiveTab] = useState('calendar'); // 'calendar' | 'add'
 
   const fetchHolidays = async () => {
     setLoading(true);
@@ -50,8 +65,6 @@ export default function CrossBorderCalendarView() {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
-
-  const [activeTab, setActiveTab] = useState('calendar'); // 'calendar' | 'add'
 
   const handleCreateHoliday = async (e) => {
     e.preventDefault();
@@ -87,236 +100,348 @@ export default function CrossBorderCalendarView() {
     }
   };
 
-  const isAdmin = currentPersona.role === 'AdminHr';
+  const isAdmin = currentPersona?.role === 'AdminHr' || currentUser?.ticketingRole === 'SuperAdmin';
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-        <h2 style={{ margin: '0 0 10px 0' }}>Cross-Border Dual Calendar (Philippines &amp; Denmark)</h2>
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <Globe2 className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
+              Cross-Border Dual Calendar
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 mb-0">
+            Coordinated statutory holidays &amp; sprint calendars for 🇵🇭 Manila HQ and 🇩🇰 Copenhagen Clients.
+          </p>
+        </div>
 
-        {/* Sub-tabs to eliminate vertical scrolling */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('calendar')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'calendar' ? 600 : 400,
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'calendar' ? '2px solid #0366d6' : '2px solid transparent',
-              color: activeTab === 'calendar' ? '#0366d6' : '#586069',
-              cursor: 'pointer'
-            }}
-          >
-            🗓️ Cross-Border Holidays ({holidays.length})
-          </button>
-
-          {isAdmin && (
+        {/* Tab & Action Controls */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
             <button
               type="button"
-              onClick={() => setActiveTab('add')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '13px',
-                fontWeight: activeTab === 'add' ? 600 : 400,
-                border: 'none',
-                background: 'none',
-                borderBottom: activeTab === 'add' ? '2px solid #0366d6' : '2px solid transparent',
-                color: activeTab === 'add' ? '#0366d6' : '#586069',
-                cursor: 'pointer'
-              }}
+              onClick={() => setActiveTab('calendar')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'calendar'
+                  ? 'bg-[#13264C] text-white shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950'
+              }`}
             >
-              ➕ Register Holiday (Admin/HR)
+              Holidays ({holidays.length})
             </button>
-          )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('add')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'add'
+                    ? 'bg-[#13264C] text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
+                <span>Register Holiday</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      {/* Success Notification */}
+      <AnimatePresence>
         {formSuccess && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{formSuccess}</span>
-            <button type="button" onClick={() => setFormSuccess(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#166534', fontWeight: 600 }}>✕</button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{formSuccess}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormSuccess(null)}
+              className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Tab 1: Calendar Table & Filters */}
-        {activeTab === 'calendar' && (
-          <div>
-            <fieldset style={{ marginBottom: '16px' }}>
-              <legend>Calendar Filters</legend>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div>
-                  <label htmlFor="countryFilter">Country: </label>
-                  <select
-                    id="countryFilter"
-                    value={countryFilter}
-                    onChange={(e) => setCountryFilter(e.target.value)}
-                  >
-                    <option value="">Both (Philippines &amp; Denmark)</option>
-                    <option value="Philippines">Philippines Only</option>
-                    <option value="Denmark">Denmark Only</option>
-                  </select>
-                </div>
+      {/* Dual Station Overview Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🇵🇭</span>
+            <div>
+              <div className="text-xs font-bold text-zinc-950">Philippines Hub (Manila)</div>
+              <div className="text-[11px] text-zinc-500">Asia/Manila (PHT) &bull; Core Delivery Engineering</div>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#13264C]/10 text-[#13264C]">
+            HQ Campus
+          </span>
+        </div>
 
-                <div>
-                  <label htmlFor="yearFilter">Year: </label>
-                  <select
-                    id="yearFilter"
-                    value={yearFilter}
-                    onChange={(e) => setYearFilter(e.target.value)}
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🇩🇰</span>
+            <div>
+              <div className="text-xs font-bold text-zinc-950">Denmark Client (Copenhagen)</div>
+              <div className="text-[11px] text-zinc-500">Europe/Copenhagen (CEST) &bull; Enterprise Stakeholders</div>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#D61766]/10 text-[#D61766]">
+            Dedicated Client
+          </span>
+        </div>
+      </div>
+
+      {/* TAB 1: Calendar Ledger & Filter Toolbar */}
+      {activeTab === 'calendar' && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
+          {/* Filter Bar */}
+          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+                <Calendar className="w-4 h-4" />
+              </span>
+              <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+                Official Holiday Register
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Country Filters */}
+              <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
+                {[
+                  { value: '', label: 'All Regions' },
+                  { value: 'Philippines', label: '🇵🇭 Philippines' },
+                  { value: 'Denmark', label: '🇩🇰 Denmark' },
+                ].map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setCountryFilter(c.value)}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      countryFilter === c.value
+                        ? 'bg-[#13264C] text-white shadow-2xs'
+                        : 'text-zinc-600 hover:text-zinc-950'
+                    }`}
                   >
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                  </select>
-                </div>
+                    {c.label}
+                  </button>
+                ))}
               </div>
-            </fieldset>
 
-            {loading && <p>Loading dual calendar...</p>}
-            {error && <p><strong>Error:</strong> {error}</p>}
+              {/* Year Filter */}
+              <select
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs bg-zinc-100 border border-zinc-200 rounded-xl font-bold text-zinc-800 focus:outline-none focus:border-[#13264C]"
+              >
+                <option value="2026">2026 Calendar</option>
+                <option value="2025">2025 Calendar</option>
+              </select>
+            </div>
+          </div>
 
-            {!loading && (
-              <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
-                <thead>
+          {/* Table */}
+          {loading ? (
+            <div className="p-12 text-center text-xs text-zinc-500 font-medium">
+              Loading cross-border calendar...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-xs text-rose-600 font-medium">
+              Error loading calendar: {error}
+            </div>
+          ) : holidays.length === 0 ? (
+            <div className="p-12 text-center text-xs text-zinc-500">
+              No holiday records found for the selected region.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th>Date</th>
-                    <th>Country</th>
-                    <th>Holiday Name</th>
-                    <th>Operational Working Status</th>
-                    <th>Cross-Border Impact &amp; Notes</th>
-                    {isAdmin && <th>Actions</th>}
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4">Country</th>
+                    <th className="py-3 px-4">Holiday Name</th>
+                    <th className="py-3 px-4">Operational Status</th>
+                    <th className="py-3 px-4">Cross-Border Impact</th>
+                    {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                   </tr>
                 </thead>
-                <tbody>
-                  {holidays.length === 0 ? (
-                    <tr>
-                      <td colSpan={isAdmin ? 6 : 5} align="center" style={{ padding: '24px' }}>No holiday records found.</td>
-                    </tr>
-                  ) : (
-                    holidays.map((h) => {
-                      const isPH = h.country === 'Philippines';
-                      const operationalImpact = isPH
-                        ? 'Manila Hub Closed (PH Non-Working Day) — Danish Clients Operating'
-                        : 'Danish Client Closed — Manila Developers Operating Normally';
+                <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
+                  {holidays.map((h) => {
+                    const isPH = h.country === 'Philippines';
+                    const defaultImpact = isPH
+                      ? 'Manila Hub Closed (PH Non-Working Day) — Danish Clients Operating'
+                      : 'Danish Client Closed — Manila Developers Operating Normally';
 
-                      return (
-                        <tr key={h.id}>
-                          <td><strong>{h.holidayDate}</strong></td>
-                          <td>
-                            {isPH ? '🇵🇭 Philippines' : '🇩🇰 Denmark'}
+                    return (
+                      <tr key={h.id} className="hover:bg-zinc-50/80 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-[#13264C] whitespace-nowrap">
+                          {h.holidayDate}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-zinc-900 whitespace-nowrap">
+                          {isPH ? '🇵🇭 Philippines' : '🇩🇰 Denmark'}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-zinc-950">
+                          {h.title}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                              h.isWorkingDay
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-[#D61766]/10 text-[#D61766] border-[#D61766]/20'
+                            }`}
+                          >
+                            {h.isWorkingDay ? 'Working Day' : 'Office Closed'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-zinc-500 text-xs">
+                          {h.notes || defaultImpact}
+                        </td>
+                        {isAdmin && (
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteHoliday(h.id, h.title)}
+                              className="text-zinc-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Holiday"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
-                          <td>{h.title}</td>
-                          <td>
-                            {h.isWorkingDay ? 'Working Day' : 'Office Closed (Non-Working)'}
-                          </td>
-                          <td>
-                            {h.notes || operationalImpact}
-                          </td>
-                          {isAdmin && (
-                            <td>
-                              <button type="button" onClick={() => handleDeleteHoliday(h.id, h.title)} style={{ fontSize: '11px', color: '#cb2431' }}>
-                                Remove
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })
-                  )}
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: Register Holiday Form */}
+      {activeTab === 'add' && isAdmin && (
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
+              <PlusCircle className="w-4 h-4 text-[#D61766]" />
+            </span>
+            <h3 className="text-sm font-bold text-zinc-950 tracking-tight m-0">
+              Register New Cross-Border Holiday
+            </h3>
           </div>
-        )}
 
-        {/* Tab 2: Register Holiday Form */}
-        {activeTab === 'add' && isAdmin && (
-          <fieldset style={{ margin: 0 }}>
-            <legend>Register Cross-Border Holiday</legend>
-            <form onSubmit={handleCreateHoliday} style={{ marginTop: '8px' }}>
-              <p>
-                <label htmlFor="holidayTitle">Holiday Name: </label>
-                <br />
-                <input
-                  id="holidayTitle"
-                  name="title"
-                  type="text"
-                  required
-                  placeholder="e.g. National Heroes Day"
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                  value={formData.title}
-                  onChange={handleFormChange}
-                />
-              </p>
+          <form onSubmit={handleCreateHoliday} className="flex flex-col gap-3.5">
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Holiday Title
+              </label>
+              <input
+                name="title"
+                type="text"
+                required
+                placeholder="e.g. Labor Day / Store Bededag"
+                value={formData.title}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+              />
+            </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                <p>
-                  <label htmlFor="holidayDate">Date: </label>
-                  <br />
-                  <input
-                    id="holidayDate"
-                    name="holidayDate"
-                    type="date"
-                    required
-                    style={{ width: '100%' }}
-                    value={formData.holidayDate}
-                    onChange={handleFormChange}
-                  />
-                </p>
-
-                <p>
-                  <label htmlFor="country">Country: </label>
-                  <br />
-                  <select
-                    id="country"
-                    name="country"
-                    style={{ width: '100%' }}
-                    value={formData.country}
-                    onChange={handleFormChange}
-                  >
-                    <option value="Philippines">Philippines</option>
-                    <option value="Denmark">Denmark</option>
-                  </select>
-                </p>
-              </div>
-
-              <p>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    name="isWorkingDay"
-                    type="checkbox"
-                    checked={formData.isWorkingDay}
-                    onChange={handleFormChange}
-                  />
-                  <span>Is this a special working day? (Leave unchecked for standard holidays)</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Country / Region
                 </label>
-              </p>
-
-              <p>
-                <label htmlFor="holidayNotes">Operational Notes: </label>
-                <br />
-                <input
-                  id="holidayNotes"
-                  name="notes"
-                  type="text"
-                  placeholder="e.g. Regular Holiday under DOLE proclamation"
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                  value={formData.notes}
+                <select
+                  name="country"
+                  value={formData.country}
                   onChange={handleFormChange}
-                />
-              </p>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="submit">Save Holiday</button>
-                <button type="button" onClick={() => setActiveTab('calendar')}>Cancel</button>
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                >
+                  <option value="Philippines">🇵🇭 Philippines</option>
+                  <option value="Denmark">🇩🇰 Denmark</option>
+                </select>
               </div>
-            </form>
-          </fieldset>
-        )}
-      </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Holiday Date
+                </label>
+                <input
+                  name="holidayDate"
+                  type="date"
+                  required
+                  value={formData.holidayDate}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 py-1">
+              <input
+                id="isWorkingDay"
+                name="isWorkingDay"
+                type="checkbox"
+                checked={formData.isWorkingDay}
+                onChange={handleFormChange}
+                className="w-4 h-4 rounded text-[#13264C] focus:ring-[#13264C]"
+              />
+              <label htmlFor="isWorkingDay" className="text-xs font-medium text-zinc-700 cursor-pointer">
+                Special working holiday (DevOps / Client sprint coverage required)
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 mb-1">
+                Cross-Border Operational Notes
+              </label>
+              <textarea
+                name="notes"
+                rows={3}
+                placeholder="Specify staffing coverage or asynchronous delivery protocol..."
+                value={formData.notes}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] shadow-xs cursor-pointer transition-all"
+              >
+                <Send className="w-4 h-4" />
+                <span>Save Holiday to Calendar</span>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('calendar')}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

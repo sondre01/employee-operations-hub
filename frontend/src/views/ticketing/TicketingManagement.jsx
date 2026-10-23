@@ -5,160 +5,85 @@ import TicketStatsView from './TicketStatsView';
 import DepartmentManagementView from './DepartmentManagementView';
 import AccessControlView from './AccessControlView';
 import EmployeeDirectoryView from '../EmployeeDirectoryView';
-import UserProfileNavCard from '../../components/UserProfileNavCard';
+import FuturisticSidebar from '../../components/FuturisticSidebar';
+import {
+  Inbox,
+  BarChart3,
+  Building2,
+  ShieldCheck,
+  Users,
+  Menu
+} from 'lucide-react';
 
-export default function TicketingManagement() {
+export default function TicketingManagement({ onOpenCommandPalette }) {
   const { currentUser, isSuperAdmin, canAssignEmployees } = useAuth();
   const [activeTab, setActiveTab] = useState('queue');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const navItems = [
+    { key: 'queue', label: 'Ticket Queue', icon: Inbox },
+    { key: 'stats', label: 'Service Analytics', icon: BarChart3 },
+    ...(isSuperAdmin ? [{ key: 'departments', label: 'Departments', icon: Building2, badge: 'Admin' }] : []),
+    ...(isSuperAdmin || canAssignEmployees ? [{ key: 'access', label: 'Access & RBAC', icon: ShieldCheck, badge: 'Staff' }] : []),
+    { key: 'roster', label: 'Staff Directory', icon: Users }
+  ];
+
+  const handleSelectTab = (key) => {
+    setActiveTab(key);
+    setMobileNavOpen(false);
+  };
 
   return (
-    <div style={{ display: 'flex', flex: 1, width: '100%', height: '100%', overflow: 'hidden', minHeight: 0 }}>
-      {/* Left Navigation Bar for Ticketing System - Fixed on Left */}
-      <aside
-        style={{
-          width: '240px',
-          borderRight: '1px solid #e1e4e8',
-          backgroundColor: '#f6f8fa',
-          display: 'flex',
-          flexDirection: 'column',
-          flexShrink: 0,
-          height: '100%',
-          overflow: 'hidden'
-        }}
+    <div className="flex flex-1 w-full h-full overflow-hidden min-h-0 bg-zinc-50 font-sans select-none relative">
+      {/* Mobile Overlay */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 md:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
+      {/* Futuristic Left Sidebar Navigation */}
+      <div
+        className={`fixed md:static inset-y-0 left-0 z-40 h-full transition-transform duration-200 ease-in-out ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
       >
-        <div style={{ padding: '16px 16px 12px 16px', borderBottom: '1px solid #e1e4e8', marginBottom: '4px', flexShrink: 0 }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#6a737d', fontWeight: 600 }}>
-            Ticketing Operations
-          </div>
-          <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px', color: '#24292e' }}>
-            Operational Desk
-          </div>
-        </div>
-
-        {/* Scrollable Navigation Items */}
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', padding: '4px 0' }}>
-          <button
-            onClick={() => setActiveTab('queue')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 16px',
-              border: 'none',
-              background: activeTab === 'queue' ? '#fff' : 'transparent',
-              borderLeft: activeTab === 'queue' ? '3px solid #0366d6' : '3px solid transparent',
-              fontWeight: activeTab === 'queue' ? 600 : 400,
-              color: activeTab === 'queue' ? '#0366d6' : '#24292e',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: '13px'
-            }}
-          >
-            <span>📋 Ticket Queue</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('stats')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 16px',
-              border: 'none',
-              background: activeTab === 'stats' ? '#fff' : 'transparent',
-              borderLeft: activeTab === 'stats' ? '3px solid #0366d6' : '3px solid transparent',
-              fontWeight: activeTab === 'stats' ? 600 : 400,
-              color: activeTab === 'stats' ? '#0366d6' : '#24292e',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: '13px'
-            }}
-          >
-            <span>📊 Ticket Stats & Analytics</span>
-          </button>
-
-          {/* Super Admin Only: Department Configuration */}
-          {isSuperAdmin && (
-            <button
-              onClick={() => setActiveTab('departments')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 16px',
-                border: 'none',
-                background: activeTab === 'departments' ? '#fff' : 'transparent',
-                borderLeft: activeTab === 'departments' ? '3px solid #0366d6' : '3px solid transparent',
-                fontWeight: activeTab === 'departments' ? 600 : 400,
-                color: activeTab === 'departments' ? '#0366d6' : '#24292e',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '13px'
-              }}
-            >
-              <span>🏢 Department Config</span>
-              <span style={{ fontSize: '10px', background: '#ffeef0', color: '#cb2431', padding: '1px 4px', borderRadius: '3px' }}>Admin</span>
-            </button>
-          )}
-
-          {/* Super Admin or DevOps with Delegation Permission: Access & RBAC */}
-          {(isSuperAdmin || canAssignEmployees) && (
-            <button
-              onClick={() => setActiveTab('access')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 16px',
-                border: 'none',
-                background: activeTab === 'access' ? '#fff' : 'transparent',
-                borderLeft: activeTab === 'access' ? '3px solid #0366d6' : '3px solid transparent',
-                fontWeight: activeTab === 'access' ? 600 : 400,
-                color: activeTab === 'access' ? '#0366d6' : '#24292e',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '13px'
-              }}
-            >
-              <span>🔐 Access & RBAC</span>
-              <span style={{ fontSize: '10px', background: '#e1e4e8', color: '#24292e', padding: '1px 4px', borderRadius: '3px' }}>Staff</span>
-            </button>
-          )}
-
-          {/* Outstaffing Roster & Directory */}
-          <button
-            onClick={() => setActiveTab('roster')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 16px',
-              border: 'none',
-              background: activeTab === 'roster' ? '#fff' : 'transparent',
-              borderLeft: activeTab === 'roster' ? '3px solid #0366d6' : '3px solid transparent',
-              fontWeight: activeTab === 'roster' ? 600 : 400,
-              color: activeTab === 'roster' ? '#0366d6' : '#24292e',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: '13px'
-            }}
-          >
-            <span>👥 Outstaffing Roster</span>
-          </button>
-        </div>
-
-        {/* User Identity & Role docked at bottom of left nav bar */}
-        <UserProfileNavCard />
-      </aside>
-
-      {/* Main Content Area - Scrollable Independently */}
-      <div style={{ flex: 1, height: '100%', padding: '24px 32px', overflowY: 'auto', backgroundColor: '#fff', minWidth: 0, minHeight: 0 }}>
-        {activeTab === 'queue' && <TicketQueueView />}
-        {activeTab === 'stats' && <TicketStatsView />}
-        {activeTab === 'departments' && isSuperAdmin && <DepartmentManagementView />}
-        {activeTab === 'access' && (isSuperAdmin || canAssignEmployees) && <AccessControlView />}
-        {activeTab === 'roster' && <EmployeeDirectoryView />}
+        <FuturisticSidebar
+          title="Service Desk"
+          subtitle="Operations Center"
+          navItems={navItems}
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          onOpenCommandPalette={onOpenCommandPalette}
+        />
       </div>
+
+      {/* Main Content Area */}
+      <main className="flex-1 h-full min-w-0 min-h-0 box-border bg-zinc-50/50 p-4 sm:p-6 overflow-y-auto flex flex-col">
+        {/* Mobile Toggle Bar */}
+        <div className="md:hidden flex items-center justify-between pb-3 mb-2 border-b border-zinc-200/80 shrink-0">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-bold text-zinc-800 shadow-2xs"
+          >
+            <Menu className="w-4 h-4 text-[#13264C]" />
+            <span>Menu &bull; {navItems.find(n => n.key === activeTab)?.label}</span>
+          </button>
+          <span className="text-[10px] font-semibold text-zinc-500">
+            Operations Desk
+          </span>
+        </div>
+
+        <div className="flex-1 min-h-0 min-w-0">
+          {activeTab === 'queue' && <TicketQueueView />}
+          {activeTab === 'stats' && <TicketStatsView />}
+          {activeTab === 'departments' && isSuperAdmin && <DepartmentManagementView />}
+          {activeTab === 'access' && (isSuperAdmin || canAssignEmployees) && <AccessControlView />}
+          {activeTab === 'roster' && <EmployeeDirectoryView />}
+        </div>
+      </main>
     </div>
   );
 }
