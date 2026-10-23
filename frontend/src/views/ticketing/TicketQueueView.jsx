@@ -96,102 +96,177 @@ export default function TicketQueueView() {
   };
 
   return (
-    <div>
-      <h2>Operational Ticket Queue</h2>
-      <p>
-        Operator workspace for routing, assigning, and resolving department tickets.
-        {isSuperAdmin && <strong> (Super Admin: Viewing all department queues)</strong>}
-      </p>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
+        <h2 style={{ margin: '0 0 10px 0' }}>Operational Ticket Queue</h2>
 
-      {/* Filter Bar */}
-      <fieldset style={{ marginBottom: '16px' }}>
-        <legend>Queue Filters</legend>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-          <div>
-            <label htmlFor="deptFilter">Department: </label>
-            <select
-              id="deptFilter"
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-            >
-              <option value="">All Departments</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id.toString()}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="statusFilter">Status: </label>
-            <select
-              id="statusFilter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <option value="Open">Open</option>
-              <option value="InProgress">In Progress</option>
-              <option value="Resolved">Resolved</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="priorityFilter">Priority: </label>
-            <select
-              id="priorityFilter"
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-            >
-              <option value="">All Priorities</option>
-              <option value="Urgent">Urgent</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
+        {/* Status Sub-tabs to eliminate scroll clutter */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('')}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: statusFilter === '' && !resolvingTicketId ? 600 : 400,
+              border: 'none',
+              background: 'none',
+              borderBottom: statusFilter === '' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
+              color: statusFilter === '' && !resolvingTicketId ? '#0366d6' : '#586069',
+              cursor: 'pointer'
+            }}
+          >
+            📋 All Queue
+          </button>
 
           <button
             type="button"
-            onClick={() => {
-              setDeptFilter('');
-              setStatusFilter('');
-              setPriorityFilter('');
+            onClick={() => { setStatusFilter('Open'); setResolvingTicketId(null); }}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: statusFilter === 'Open' && !resolvingTicketId ? 600 : 400,
+              border: 'none',
+              background: 'none',
+              borderBottom: statusFilter === 'Open' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
+              color: statusFilter === 'Open' && !resolvingTicketId ? '#0366d6' : '#586069',
+              cursor: 'pointer'
             }}
           >
-            Reset
+            🟡 Open Queue
           </button>
+
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('InProgress'); setResolvingTicketId(null); }}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: statusFilter === 'InProgress' && !resolvingTicketId ? 600 : 400,
+              border: 'none',
+              background: 'none',
+              borderBottom: statusFilter === 'InProgress' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
+              color: statusFilter === 'InProgress' && !resolvingTicketId ? '#0366d6' : '#586069',
+              cursor: 'pointer'
+            }}
+          >
+            🔵 In Progress
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('Resolved'); setResolvingTicketId(null); }}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: statusFilter === 'Resolved' && !resolvingTicketId ? 600 : 400,
+              border: 'none',
+              background: 'none',
+              borderBottom: statusFilter === 'Resolved' && !resolvingTicketId ? '2px solid #0366d6' : '2px solid transparent',
+              color: statusFilter === 'Resolved' && !resolvingTicketId ? '#0366d6' : '#586069',
+              cursor: 'pointer'
+            }}
+          >
+            🟢 Resolved
+          </button>
+
+          {resolvingTicketId && (
+            <button
+              type="button"
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                border: 'none',
+                background: 'none',
+                borderBottom: '2px solid #166534',
+                color: '#166534',
+                cursor: 'pointer'
+              }}
+            >
+              ✍️ Resolve Ticket #{resolvingTicketId}
+            </button>
+          )}
         </div>
-      </fieldset>
+      </div>
 
-      {/* Resolution documentation box */}
-      {resolvingTicketId && (
-        <fieldset style={{ background: '#f0fdf4', borderColor: '#86efac', marginBottom: '16px' }}>
-          <legend>Resolve Ticket #{resolvingTicketId}</legend>
-          <p>
-            <label htmlFor="resolutionNotes">Resolution Documentation (Action taken):</label>
-            <br />
-            <textarea
-              id="resolutionNotes"
-              rows="3"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              placeholder="Detail what was completed to resolve this issue..."
-              value={resolutionNotes}
-              onChange={(e) => setResolutionNotes(e.target.value)}
-            />
-          </p>
-          <button type="button" onClick={() => handleConfirmResolution(resolvingTicketId)}>
-            Confirm & Mark Resolved
-          </button>{' '}
-          <button type="button" onClick={() => { setResolvingTicketId(null); setResolutionNotes(''); }}>
-            Cancel
-          </button>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {/* Additional Filters Bar */}
+        <fieldset style={{ marginBottom: '16px' }}>
+          <legend>Queue Filters</legend>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+            <div>
+              <label htmlFor="deptFilter">Department: </label>
+              <select
+                id="deptFilter"
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id.toString()}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="priorityFilter">Priority: </label>
+              <select
+                id="priorityFilter"
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+              >
+                <option value="">All Priorities</option>
+                <option value="Urgent">Urgent</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDeptFilter('');
+                setStatusFilter('');
+                setPriorityFilter('');
+                setResolvingTicketId(null);
+              }}
+            >
+              Reset Filters
+            </button>
+          </div>
         </fieldset>
-      )}
 
-      {loading && <p>Loading ticket queue...</p>}
-      {error && <p><strong>Error:</strong> {error}</p>}
+        {/* Resolution documentation tab view */}
+        {resolvingTicketId && (
+          <fieldset style={{ background: '#f0fdf4', borderColor: '#86efac', marginBottom: '16px' }}>
+            <legend>Documentation for Ticket #{resolvingTicketId}</legend>
+            <p>
+              <label htmlFor="resolutionNotes">Resolution Documentation (Action taken):</label>
+              <br />
+              <textarea
+                id="resolutionNotes"
+                rows="3"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+                placeholder="Detail what was completed to resolve this issue..."
+                value={resolutionNotes}
+                onChange={(e) => setResolutionNotes(e.target.value)}
+              />
+            </p>
+            <button type="button" onClick={() => handleConfirmResolution(resolvingTicketId)}>
+              Confirm &amp; Mark Resolved
+            </button>{' '}
+            <button type="button" onClick={() => { setResolvingTicketId(null); setResolutionNotes(''); }}>
+              Cancel
+            </button>
+          </fieldset>
+        )}
+
+        {loading && <p>Loading ticket queue...</p>}
+        {error && <p><strong>Error:</strong> {error}</p>}
 
       {!loading && (
         <table border="1" cellPadding="6" cellSpacing="0">
@@ -290,6 +365,7 @@ export default function TicketQueueView() {
           </tbody>
         </table>
       )}
+      </div>
     </div>
   );
 }

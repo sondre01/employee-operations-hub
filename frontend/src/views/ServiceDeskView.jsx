@@ -104,9 +104,6 @@ export default function ServiceDeskView() {
   return (
     <section>
       <h2>Operational Service Desk & Helpdesk Queues</h2>
-      <p>
-        Routing internal IT infrastructure (hardware/VPN) and HR/Legal (COE, HMO, statutory contributions) tickets.
-      </p>
 
       {/* Filter Bar */}
       <fieldset>

@@ -94,9 +94,6 @@ export default function HardwareCustodyView() {
   return (
     <section>
       <h2>Hardware Custody & Asset Management</h2>
-      <p>
-        Tracks laptop models, serial numbers, and IT assets assigned to developers across Manila.
-      </p>
 
       {/* Filter Bar */}
       <fieldset>

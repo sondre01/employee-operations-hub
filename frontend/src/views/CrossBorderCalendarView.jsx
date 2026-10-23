@@ -51,6 +51,8 @@ export default function CrossBorderCalendarView() {
     }));
   };
 
+  const [activeTab, setActiveTab] = useState('calendar'); // 'calendar' | 'add'
+
   const handleCreateHoliday = async (e) => {
     e.preventDefault();
     setError(null);
@@ -68,6 +70,7 @@ export default function CrossBorderCalendarView() {
         isWorkingDay: false,
         notes: '',
       });
+      setActiveTab('calendar');
       fetchHolidays();
     } catch (err) {
       setError(err.message);
@@ -87,122 +90,169 @@ export default function CrossBorderCalendarView() {
   const isAdmin = currentPersona.role === 'AdminHr';
 
   return (
-    <section>
-      <h2>Cross-Border Dual Calendar (Philippines & Denmark)</h2>
-      <p>
-        Aligns Manila engineering operations (UTC+8) with Danish client leadership (UTC+1/+2).
-        Helps client leads and developers anticipate office closures and team availability.
-      </p>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
+        <h2 style={{ margin: '0 0 10px 0' }}>Cross-Border Dual Calendar (Philippines &amp; Denmark)</h2>
 
-      {/* Filter Bar */}
-      <fieldset>
-        <legend>Calendar Filters</legend>
-        <label htmlFor="countryFilter">Country: </label>
-        <select
-          id="countryFilter"
-          value={countryFilter}
-          onChange={(e) => setCountryFilter(e.target.value)}
-        >
-          <option value="">Both (Philippines & Denmark)</option>
-          <option value="Philippines">Philippines Only</option>
-          <option value="Denmark">Denmark Only</option>
-        </select>
-        {' | '}
+        {/* Sub-tabs to eliminate vertical scrolling */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('calendar')}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: activeTab === 'calendar' ? 600 : 400,
+              border: 'none',
+              background: 'none',
+              borderBottom: activeTab === 'calendar' ? '2px solid #0366d6' : '2px solid transparent',
+              color: activeTab === 'calendar' ? '#0366d6' : '#586069',
+              cursor: 'pointer'
+            }}
+          >
+            🗓️ Cross-Border Holidays ({holidays.length})
+          </button>
 
-        <label htmlFor="yearFilter">Year: </label>
-        <select
-          id="yearFilter"
-          value={yearFilter}
-          onChange={(e) => setYearFilter(e.target.value)}
-        >
-          <option value="2026">2026</option>
-          <option value="2025">2025</option>
-        </select>
-      </fieldset>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('add')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: activeTab === 'add' ? 600 : 400,
+                border: 'none',
+                background: 'none',
+                borderBottom: activeTab === 'add' ? '2px solid #0366d6' : '2px solid transparent',
+                color: activeTab === 'add' ? '#0366d6' : '#586069',
+                cursor: 'pointer'
+              }}
+            >
+              ➕ Register Holiday (Admin/HR)
+            </button>
+          )}
+        </div>
+      </div>
 
-      <br />
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {formSuccess && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{formSuccess}</span>
+            <button type="button" onClick={() => setFormSuccess(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#166534', fontWeight: 600 }}>✕</button>
+          </div>
+        )}
 
-      {loading && <p>Loading dual calendar...</p>}
-      {error && <p><strong>Error:</strong> {error}</p>}
+        {/* Tab 1: Calendar Table & Filters */}
+        {activeTab === 'calendar' && (
+          <div>
+            <fieldset style={{ marginBottom: '16px' }}>
+              <legend>Calendar Filters</legend>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div>
+                  <label htmlFor="countryFilter">Country: </label>
+                  <select
+                    id="countryFilter"
+                    value={countryFilter}
+                    onChange={(e) => setCountryFilter(e.target.value)}
+                  >
+                    <option value="">Both (Philippines &amp; Denmark)</option>
+                    <option value="Philippines">Philippines Only</option>
+                    <option value="Denmark">Denmark Only</option>
+                  </select>
+                </div>
 
-      {/* Holiday Table */}
-      {!loading && (
-        <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%' }}>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Country</th>
-              <th>Holiday Name</th>
-              <th>Operational Working Status</th>
-              <th>Cross-Border Impact & Notes</th>
-              {isAdmin && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {holidays.length === 0 ? (
-              <tr>
-                <td colSpan={isAdmin ? 6 : 5} align="center">No holiday records found.</td>
-              </tr>
-            ) : (
-              holidays.map((h) => {
-                const isPH = h.country === 'Philippines';
-                const operationalImpact = isPH
-                  ? 'Manila Hub Closed (PH Non-Working Day) — Danish Clients Operating'
-                  : 'Danish Client Closed — Manila Developers Operating Normally';
+                <div>
+                  <label htmlFor="yearFilter">Year: </label>
+                  <select
+                    id="yearFilter"
+                    value={yearFilter}
+                    onChange={(e) => setYearFilter(e.target.value)}
+                  >
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
 
-                return (
-                  <tr key={h.id}>
-                    <td><strong>{h.holidayDate}</strong></td>
-                    <td>
-                      {isPH ? '🇵🇭 Philippines' : '🇩🇰 Denmark'}
-                    </td>
-                    <td>{h.title}</td>
-                    <td>
-                      {h.isWorkingDay ? 'Working Day' : 'Office Closed (Non-Working)'}
-                    </td>
-                    <td>
-                      {h.notes || operationalImpact}
-                    </td>
-                    {isAdmin && (
-                      <td>
-                        <button type="button" onClick={() => handleDeleteHoliday(h.id, h.title)}>
-                          Remove
-                        </button>
-                      </td>
-                    )}
+            {loading && <p>Loading dual calendar...</p>}
+            {error && <p><strong>Error:</strong> {error}</p>}
+
+            {!loading && (
+              <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Country</th>
+                    <th>Holiday Name</th>
+                    <th>Operational Working Status</th>
+                    <th>Cross-Border Impact &amp; Notes</th>
+                    {isAdmin && <th>Actions</th>}
                   </tr>
-                );
-              })
+                </thead>
+                <tbody>
+                  {holidays.length === 0 ? (
+                    <tr>
+                      <td colSpan={isAdmin ? 6 : 5} align="center" style={{ padding: '24px' }}>No holiday records found.</td>
+                    </tr>
+                  ) : (
+                    holidays.map((h) => {
+                      const isPH = h.country === 'Philippines';
+                      const operationalImpact = isPH
+                        ? 'Manila Hub Closed (PH Non-Working Day) — Danish Clients Operating'
+                        : 'Danish Client Closed — Manila Developers Operating Normally';
+
+                      return (
+                        <tr key={h.id}>
+                          <td><strong>{h.holidayDate}</strong></td>
+                          <td>
+                            {isPH ? '🇵🇭 Philippines' : '🇩🇰 Denmark'}
+                          </td>
+                          <td>{h.title}</td>
+                          <td>
+                            {h.isWorkingDay ? 'Working Day' : 'Office Closed (Non-Working)'}
+                          </td>
+                          <td>
+                            {h.notes || operationalImpact}
+                          </td>
+                          {isAdmin && (
+                            <td>
+                              <button type="button" onClick={() => handleDeleteHoliday(h.id, h.title)} style={{ fontSize: '11px', color: '#cb2431' }}>
+                                Remove
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             )}
-          </tbody>
-        </table>
-      )}
+          </div>
+        )}
 
-      {/* Add Holiday Form for Admin/HR */}
-      {isAdmin && (
-        <>
-          <br />
-          <details>
-            <summary><strong>+ Add Cross-Border Holiday (Admin/HR Only)</strong></summary>
-            <form onSubmit={handleCreateHoliday}>
-              <fieldset>
-                <legend>Register Holiday</legend>
-                {formSuccess && <p><strong>Success:</strong> {formSuccess}</p>}
+        {/* Tab 2: Register Holiday Form */}
+        {activeTab === 'add' && isAdmin && (
+          <fieldset style={{ margin: 0 }}>
+            <legend>Register Cross-Border Holiday</legend>
+            <form onSubmit={handleCreateHoliday} style={{ marginTop: '8px' }}>
+              <p>
+                <label htmlFor="holidayTitle">Holiday Name: </label>
+                <br />
+                <input
+                  id="holidayTitle"
+                  name="title"
+                  type="text"
+                  required
+                  placeholder="e.g. National Heroes Day"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  value={formData.title}
+                  onChange={handleFormChange}
+                />
+              </p>
 
-                <p>
-                  <label htmlFor="holidayTitle">Holiday Name: </label>
-                  <br />
-                  <input
-                    id="holidayTitle"
-                    name="title"
-                    type="text"
-                    required
-                    placeholder="e.g. National Heroes Day"
-                    value={formData.title}
-                    onChange={handleFormChange}
-                  />
-                </p>
-
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                 <p>
                   <label htmlFor="holidayDate">Date: </label>
                   <br />
@@ -211,6 +261,7 @@ export default function CrossBorderCalendarView() {
                     name="holidayDate"
                     type="date"
                     required
+                    style={{ width: '100%' }}
                     value={formData.holidayDate}
                     onChange={handleFormChange}
                   />
@@ -222,6 +273,7 @@ export default function CrossBorderCalendarView() {
                   <select
                     id="country"
                     name="country"
+                    style={{ width: '100%' }}
                     value={formData.country}
                     onChange={handleFormChange}
                   >
@@ -229,39 +281,42 @@ export default function CrossBorderCalendarView() {
                     <option value="Denmark">Denmark</option>
                   </select>
                 </p>
+              </div>
 
-                <p>
-                  <label>
-                    <input
-                      name="isWorkingDay"
-                      type="checkbox"
-                      checked={formData.isWorkingDay}
-                      onChange={handleFormChange}
-                    />
-                    {' '}Is this a special working day? (Leave unchecked for standard holidays)
-                  </label>
-                </p>
-
-                <p>
-                  <label htmlFor="holidayNotes">Operational Notes: </label>
-                  <br />
+              <p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
-                    id="holidayNotes"
-                    name="notes"
-                    type="text"
-                    placeholder="e.g. Regular Holiday under DOLE proclamation"
-                    style={{ width: '350px' }}
-                    value={formData.notes}
+                    name="isWorkingDay"
+                    type="checkbox"
+                    checked={formData.isWorkingDay}
                     onChange={handleFormChange}
                   />
-                </p>
+                  <span>Is this a special working day? (Leave unchecked for standard holidays)</span>
+                </label>
+              </p>
 
+              <p>
+                <label htmlFor="holidayNotes">Operational Notes: </label>
+                <br />
+                <input
+                  id="holidayNotes"
+                  name="notes"
+                  type="text"
+                  placeholder="e.g. Regular Holiday under DOLE proclamation"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  value={formData.notes}
+                  onChange={handleFormChange}
+                />
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button type="submit">Save Holiday</button>
-              </fieldset>
+                <button type="button" onClick={() => setActiveTab('calendar')}>Cancel</button>
+              </div>
             </form>
-          </details>
-        </>
-      )}
-    </section>
+          </fieldset>
+        )}
+      </div>
+    </div>
   );
 }

@@ -29,6 +29,8 @@ export default function EmployeeDirectoryView() {
   });
   const [formSuccess, setFormSuccess] = useState(null);
 
+  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'detail' | 'onboard'
+
   const fetchEmployees = async () => {
     setLoading(true);
     setError(null);
@@ -53,14 +55,11 @@ export default function EmployeeDirectoryView() {
   }, [typeFilter, roleFilter, clientSearch]);
 
   const handleSelectEmployee = async (id) => {
-    if (selectedEmployee && selectedEmployee.id === id) {
-      setSelectedEmployee(null);
-      return;
-    }
     setLoadingDetail(true);
     try {
       const detail = await apiRequest(`/employees/${id}`);
       setSelectedEmployee(detail);
+      setActiveTab('detail');
     } catch (err) {
       alert(`Error loading details: ${err.message}`);
     } finally {
@@ -72,7 +71,10 @@ export default function EmployeeDirectoryView() {
     if (!window.confirm(`Are you sure you want to remove ${name}?`)) return;
     try {
       await apiRequest(`/employees/${id}`, { method: 'DELETE' });
-      if (selectedEmployee?.id === id) setSelectedEmployee(null);
+      if (selectedEmployee?.id === id) {
+        setSelectedEmployee(null);
+        setActiveTab('roster');
+      }
       fetchEmployees();
     } catch (err) {
       alert(`Failed to delete employee: ${err.message}`);
@@ -106,6 +108,7 @@ export default function EmployeeDirectoryView() {
         clientName: '',
         primaryTechStack: '',
       });
+      setActiveTab('roster');
       fetchEmployees();
     } catch (err) {
       setError(err.message);
@@ -116,135 +119,212 @@ export default function EmployeeDirectoryView() {
   const isAdmin = currentPersona.role === 'AdminHr';
 
   return (
-    <section>
-      <h2>Employee Directory & Outstaffing Roster</h2>
-      <p>
-        Tracks internal operations talent and client-dedicated engineers across client organizations.
-      </p>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
+        <h2 style={{ margin: '0 0 10px 0' }}>Employee Directory &amp; Outstaffing Roster</h2>
 
-      {/* Filter Bar */}
-      <fieldset>
-        <legend>Filters & Search</legend>
-        <div>
-          <label htmlFor="typeFilter">Employment Type: </label>
-          <select
-            id="typeFilter"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+        {/* Sub-tabs to eliminate vertical scrolling */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e1e4e8', marginTop: '14px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('roster')}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: activeTab === 'roster' ? 600 : 400,
+              border: 'none',
+              background: 'none',
+              borderBottom: activeTab === 'roster' ? '2px solid #0366d6' : '2px solid transparent',
+              color: activeTab === 'roster' ? '#0366d6' : '#586069',
+              cursor: 'pointer'
+            }}
           >
-            <option value="">All Types</option>
-            <option value="InternalCore">Internal Core (Ops / IT / HR)</option>
-            <option value="ClientDedicated">Client Dedicated (External Client Accounts)</option>
-          </select>
-          {' | '}
-
-          <label htmlFor="roleFilter">Role: </label>
-          <select
-            id="roleFilter"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-          >
-            <option value="">All Roles</option>
-            <option value="AdminHr">Admin / HR</option>
-            <option value="DanishClientLead">Client Lead</option>
-            <option value="Developer">Developer</option>
-          </select>
-          {' | '}
-
-          <label htmlFor="clientSearch">Client Name: </label>
-          <input
-            id="clientSearch"
-            type="text"
-            placeholder="e.g. Acme Solutions"
-            value={clientSearch}
-            onChange={(e) => setClientSearch(e.target.value)}
-          />
-          {' '}
-          <button type="button" onClick={() => { setTypeFilter(''); setRoleFilter(''); setClientSearch(''); }}>
-            Reset Filters
+            👥 Outstaffing Roster ({employees.length})
           </button>
+
+          {selectedEmployee && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('detail')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: activeTab === 'detail' ? 600 : 400,
+                border: 'none',
+                background: 'none',
+                borderBottom: activeTab === 'detail' ? '2px solid #0366d6' : '2px solid transparent',
+                color: activeTab === 'detail' ? '#0366d6' : '#586069',
+                cursor: 'pointer'
+              }}
+            >
+              🔍 Profile: {selectedEmployee.fullName}
+            </button>
+          )}
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('onboard')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: activeTab === 'onboard' ? 600 : 400,
+                border: 'none',
+                background: 'none',
+                borderBottom: activeTab === 'onboard' ? '2px solid #0366d6' : '2px solid transparent',
+                color: activeTab === 'onboard' ? '#0366d6' : '#586069',
+                cursor: 'pointer'
+              }}
+            >
+              ➕ Onboard New Employee
+            </button>
+          )}
         </div>
-      </fieldset>
+      </div>
 
-      <br />
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {formSuccess && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{formSuccess}</span>
+            <button type="button" onClick={() => setFormSuccess(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#166534', fontWeight: 600 }}>✕</button>
+          </div>
+        )}
 
-      {/* Status Messages */}
-      {loading && <p>Loading employee directory...</p>}
-      {error && <p><strong>Error:</strong> {error}</p>}
+        {/* Tab 1: Directory Roster & Filter */}
+        {activeTab === 'roster' && (
+          <div>
+            <fieldset style={{ marginBottom: '16px' }}>
+              <legend>Filters &amp; Search</legend>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                <div>
+                  <label htmlFor="typeFilter">Type: </label>
+                  <select
+                    id="typeFilter"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="">All Types</option>
+                    <option value="InternalCore">Internal Core (Ops / IT / HR)</option>
+                    <option value="ClientDedicated">Client Dedicated (External)</option>
+                  </select>
+                </div>
 
-      {/* Employee Table */}
-      {!loading && (
-        <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%' }}>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Full Name</th>
-              <th>Work Email</th>
-              <th>Job Title</th>
-              <th>Employment Type</th>
-              <th>Assigned Client Organization</th>
-              <th>Primary Tech Stack</th>
-              <th>Assigned Hardware</th>
-              <th>Role</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.length === 0 ? (
-              <tr>
-                <td colSpan="10" align="center">No employees found matching filter criteria.</td>
-              </tr>
-            ) : (
-              employees.map((emp) => (
-                <tr key={emp.id}>
-                  <td>{emp.id}</td>
-                  <td><strong>{emp.fullName}</strong></td>
-                  <td>{emp.workEmail}</td>
-                  <td>{emp.jobTitle}</td>
-                  <td>
-                    {emp.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}
-                  </td>
-                  <td>{emp.clientName || 'Internal Core Operations'}</td>
-                  <td>{emp.primaryTechStack || 'N/A'}</td>
-                  <td>{emp.assignedHardwareCount} item(s)</td>
-                  <td>{emp.role}</td>
-                  <td>
-                    <button type="button" onClick={() => handleSelectEmployee(emp.id)}>
-                      {selectedEmployee?.id === emp.id ? 'Close Details' : 'View Profile'}
-                    </button>
-                    {isAdmin && (
-                      <>
-                        {' '}
-                        <button type="button" onClick={() => handleDeleteEmployee(emp.id, emp.fullName)}>
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
+                <div>
+                  <label htmlFor="roleFilter">Role: </label>
+                  <select
+                    id="roleFilter"
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                  >
+                    <option value="">All Roles</option>
+                    <option value="AdminHr">Admin / HR</option>
+                    <option value="DanishClientLead">Client Lead</option>
+                    <option value="Developer">Developer</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="clientSearch">Client: </label>
+                  <input
+                    id="clientSearch"
+                    type="text"
+                    placeholder="e.g. Acme Solutions"
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                  />
+                </div>
+
+                <button type="button" onClick={() => { setTypeFilter(''); setRoleFilter(''); setClientSearch(''); }}>
+                  Reset Filters
+                </button>
+              </div>
+            </fieldset>
+
+            {loading && <p>Loading employee directory...</p>}
+            {error && <p><strong>Error:</strong> {error}</p>}
+
+            {!loading && (
+              <table border="1" cellPadding="6" cellSpacing="0" style={{ width: '100%', margin: 0 }}>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Full Name</th>
+                    <th>Work Email</th>
+                    <th>Job Title</th>
+                    <th>Classification</th>
+                    <th>Assigned Client Org</th>
+                    <th>Primary Stack</th>
+                    <th>Hardware</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" align="center" style={{ padding: '24px' }}>No employees found matching filter criteria.</td>
+                    </tr>
+                  ) : (
+                    employees.map((emp) => (
+                      <tr key={emp.id}>
+                        <td>#{emp.id}</td>
+                        <td><strong>{emp.fullName}</strong></td>
+                        <td><code>{emp.workEmail}</code></td>
+                        <td>{emp.jobTitle}</td>
+                        <td>
+                          <span className={`badge ${emp.employmentType === 'InternalCore' ? 'badge-internal' : 'badge-external'}`}>
+                            {emp.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}
+                          </span>
+                        </td>
+                        <td>{emp.clientName || 'Internal Company Operations'}</td>
+                        <td><small>{emp.primaryTechStack || 'N/A'}</small></td>
+                        <td>{emp.assignedHardwareCount} item(s)</td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectEmployee(emp.id)}
+                            style={{ fontSize: '11px', padding: '3px 8px' }}
+                          >
+                            View Details
+                          </button>
+                          {isAdmin && (
+                            <>
+                              {' '}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteEmployee(emp.id, emp.fullName)}
+                                style={{ fontSize: '11px', padding: '3px 8px', color: '#cb2431' }}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             )}
-          </tbody>
-        </table>
-      )}
+          </div>
+        )}
 
-      {/* Selected Employee Detailed Profile */}
-      {selectedEmployee && (
-        <>
-          <br />
-          <fieldset>
+        {/* Tab 2: Selected Employee Details */}
+        {activeTab === 'detail' && selectedEmployee && (
+          <fieldset style={{ margin: 0 }}>
             <legend>Profile Details: {selectedEmployee.fullName} (ID: #{selectedEmployee.id})</legend>
-            <p><strong>Job Title:</strong> {selectedEmployee.jobTitle}</p>
-            <p><strong>Email:</strong> {selectedEmployee.workEmail}</p>
-            <p><strong>Employment Type:</strong> {selectedEmployee.employmentType}</p>
-            <p><strong>Client Assignment:</strong> {selectedEmployee.clientName || 'Internal Hub'}</p>
-            <p><strong>Primary Tech Stack:</strong> {selectedEmployee.primaryTechStack}</p>
-            
-            <h4>Hardware Custody Documentation ({selectedEmployee.hardwareItems?.length || 0})</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+              <div><strong>Job Title:</strong> {selectedEmployee.jobTitle}</div>
+              <div><strong>Email:</strong> <code>{selectedEmployee.workEmail}</code></div>
+              <div><strong>Classification:</strong> {selectedEmployee.employmentType === 'InternalCore' ? 'Internal Core' : 'Client Dedicated'}</div>
+              <div><strong>Client Assignment:</strong> {selectedEmployee.clientName || 'Internal Company Operations'}</div>
+              <div><strong>Primary Tech Stack:</strong> {selectedEmployee.primaryTechStack || 'N/A'}</div>
+            </div>
+
+            <h4 style={{ margin: '16px 0 8px 0' }}>Hardware Custody Documentation ({selectedEmployee.hardwareItems?.length || 0})</h4>
             {selectedEmployee.hardwareItems?.length === 0 ? (
-              <p>No company hardware currently in custody.</p>
+              <p style={{ margin: '0 0 16px 0', color: '#64748b' }}>No company hardware currently in custody.</p>
             ) : (
-              <table border="1" cellPadding="4" cellSpacing="0">
+              <table border="1" cellPadding="4" cellSpacing="0" style={{ width: '100%', marginBottom: '16px' }}>
                 <thead>
                   <tr>
                     <th>Asset Tag</th>
@@ -258,9 +338,9 @@ export default function EmployeeDirectoryView() {
                 <tbody>
                   {selectedEmployee.hardwareItems.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.assetTag}</td>
+                      <td><strong>{item.assetTag}</strong></td>
                       <td>{item.modelName}</td>
-                      <td>{item.serialNumber}</td>
+                      <td><code>{item.serialNumber}</code></td>
                       <td>{item.assignedDate}</td>
                       <td>{item.status}</td>
                       <td>{item.notes || '-'}</td>
@@ -270,35 +350,49 @@ export default function EmployeeDirectoryView() {
               </table>
             )}
 
-            <h4>Recent Service Desk Requests ({selectedEmployee.recentTickets?.length || 0})</h4>
+            <h4 style={{ margin: '16px 0 8px 0' }}>Recent Service Desk Requests ({selectedEmployee.recentTickets?.length || 0})</h4>
             {selectedEmployee.recentTickets?.length === 0 ? (
-              <p>No recent tickets filed.</p>
+              <p style={{ margin: '0 0 16px 0', color: '#64748b' }}>No recent tickets filed.</p>
             ) : (
-              <ul>
-                {selectedEmployee.recentTickets.map((ticket) => (
-                  <li key={ticket.id}>
-                    <strong>#{ticket.id} [{ticket.queue}]:</strong> {ticket.title} — <em>{ticket.status}</em>
-                  </li>
-                ))}
-              </ul>
+              <table border="1" cellPadding="4" cellSpacing="0" style={{ width: '100%', marginBottom: '16px' }}>
+                <thead>
+                  <tr>
+                    <th>Ticket ID</th>
+                    <th>Priority</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedEmployee.recentTickets.map((ticket) => (
+                    <tr key={ticket.id}>
+                      <td><strong>#{ticket.id}</strong></td>
+                      <td>{ticket.priority}</td>
+                      <td>{ticket.title}</td>
+                      <td>{ticket.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
-            <br />
-            <button type="button" onClick={() => setSelectedEmployee(null)}>Close Profile View</button>
-          </fieldset>
-        </>
-      )}
 
-      {/* Onboard Form for Admin/HR */}
-      {isAdmin && (
-        <>
-          <br />
-          <details>
-            <summary><strong>+ Onboard New Employee (Admin/HR Only)</strong></summary>
-            <form onSubmit={handleCreateEmployee}>
-              <fieldset>
-                <legend>New Employee Details</legend>
-                {formSuccess && <p><strong>Success:</strong> {formSuccess}</p>}
-                
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" onClick={() => setActiveTab('roster')}>
+                ← Back to Roster
+              </button>
+              <button type="button" onClick={() => { setSelectedEmployee(null); setActiveTab('roster'); }}>
+                Close Inspector
+              </button>
+            </div>
+          </fieldset>
+        )}
+
+        {/* Tab 3: Onboard Employee (Admin/HR Only) */}
+        {activeTab === 'onboard' && isAdmin && (
+          <fieldset style={{ margin: 0 }}>
+            <legend>New Employee Details</legend>
+            <form onSubmit={handleCreateEmployee} style={{ marginTop: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                 <p>
                   <label htmlFor="fullName">Full Name: </label>
                   <br />
@@ -307,6 +401,7 @@ export default function EmployeeDirectoryView() {
                     name="fullName"
                     type="text"
                     required
+                    style={{ width: '100%' }}
                     value={formData.fullName}
                     onChange={handleFormChange}
                   />
@@ -320,6 +415,7 @@ export default function EmployeeDirectoryView() {
                     name="workEmail"
                     type="email"
                     required
+                    style={{ width: '100%' }}
                     value={formData.workEmail}
                     onChange={handleFormChange}
                   />
@@ -333,6 +429,7 @@ export default function EmployeeDirectoryView() {
                     name="jobTitle"
                     type="text"
                     required
+                    style={{ width: '100%' }}
                     value={formData.jobTitle}
                     onChange={handleFormChange}
                   />
@@ -344,6 +441,7 @@ export default function EmployeeDirectoryView() {
                   <select
                     id="employmentType"
                     name="employmentType"
+                    style={{ width: '100%' }}
                     value={formData.employmentType}
                     onChange={handleFormChange}
                   >
@@ -358,6 +456,7 @@ export default function EmployeeDirectoryView() {
                   <select
                     id="role"
                     name="role"
+                    style={{ width: '100%' }}
                     value={formData.role}
                     onChange={handleFormChange}
                   >
@@ -376,6 +475,7 @@ export default function EmployeeDirectoryView() {
                       name="clientName"
                       type="text"
                       placeholder="e.g. Kobenhavn Tech A/S"
+                      style={{ width: '100%' }}
                       value={formData.clientName}
                       onChange={handleFormChange}
                     />
@@ -390,17 +490,21 @@ export default function EmployeeDirectoryView() {
                     name="primaryTechStack"
                     type="text"
                     placeholder="e.g. .NET 8, React, PostgreSQL"
+                    style={{ width: '100%' }}
                     value={formData.primaryTechStack}
                     onChange={handleFormChange}
                   />
                 </p>
+              </div>
 
+              <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
                 <button type="submit">Submit Onboarding Record</button>
-              </fieldset>
+                <button type="button" onClick={() => setActiveTab('roster')}>Cancel</button>
+              </div>
             </form>
-          </details>
-        </>
-      )}
-    </section>
+          </fieldset>
+        )}
+      </div>
+    </div>
   );
 }
