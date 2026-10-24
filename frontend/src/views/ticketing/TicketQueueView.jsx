@@ -278,26 +278,26 @@ export default function TicketQueueView() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
+            <table className="w-full text-xs text-left border-collapse min-w-[760px]">
               <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Ticket</th>
-                  <th className="py-3 px-4">Dept</th>
-                  <th className="py-3 px-4">Priority</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Ticket</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Dept</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Priority</th>
                   <th className="py-3 px-4">Title &amp; Context</th>
-                  <th className="py-3 px-4">Submitted By</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Assignee</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Submitted By</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Assignee</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
                 {tickets.map((t) => (
                   <tr key={t.id} className="hover:bg-zinc-50/80 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-[#13264C]">
+                    <td className="py-3 px-4 font-mono font-bold text-[#13264C] whitespace-nowrap">
                       #{t.id}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-zinc-900">
+                    <td className="py-3 px-4 font-semibold text-zinc-900 whitespace-nowrap">
                       {t.departmentName || 'General'}
                     </td>
                     <td className="py-3 px-4">

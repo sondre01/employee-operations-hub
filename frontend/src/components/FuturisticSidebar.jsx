@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut } from 'lucide-react';
+import { LogOut, X } from 'lucide-react';
 
 export default function FuturisticSidebar({
   title = '',
@@ -8,7 +8,8 @@ export default function FuturisticSidebar({
   navItems = [],
   activeTab = '',
   onSelectTab,
-  onOpenCommandPalette
+  onOpenCommandPalette,
+  onClose
 }) {
   const { currentUser, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -27,28 +28,35 @@ export default function FuturisticSidebar({
   });
 
   return (
-    <aside className="relative h-full w-20 shrink-0 bg-white border-r border-zinc-200/80 shadow-2xs flex flex-col justify-between overflow-hidden z-20 select-none">
+    <aside className="relative h-full w-24 shrink-0 bg-white border-r border-zinc-200/80 shadow-2xs flex flex-col justify-between overflow-hidden z-20 select-none">
       {/* Top Subtle Border Accent */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#13264C] via-[#D61766] to-[#13264C] opacity-40 pointer-events-none rounded-tl-xl" />
 
-      {/* TOP: Brand Identity */}
-      <div className="p-3 border-b border-zinc-100 flex flex-col items-center justify-center shrink-0">
-        <div
-          className="relative w-9 h-9 rounded-xl bg-[#13264C] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 select-none cursor-default"
-          title="Malayo Operations Hub"
-        >
-          <span>M</span>
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#D61766] ring-2 ring-white" />
+      {/* Mobile Dismiss Button */}
+      {onClose && (
+        <div className="md:hidden flex justify-end p-1.5 border-b border-zinc-100 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+            title="Close Navigation Drawer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        {(title || subtitle) && (
-          <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider text-center mt-1 truncate max-w-full">
+      )}
+
+      {/* Optional Top Section Header */}
+      {(title || subtitle) ? (
+        <div className="py-2.5 px-1 border-b border-zinc-100 flex flex-col items-center justify-center shrink-0">
+          <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider text-center truncate max-w-full">
             {title || subtitle}
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {/* MIDDLE: Dynamic Nav Items (Icon on top, Name below) */}
-      <div className="flex-1 flex flex-col gap-1.5 p-1.5 sm:p-2 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col gap-1.5 p-1.5 min-h-0 overflow-y-auto overflow-x-hidden pt-2 sm:pt-2.5">
         {navItems.map((item) => {
           const isActive = activeTab === item.key;
           const Icon = item.icon;
@@ -81,7 +89,7 @@ export default function FuturisticSidebar({
                   ) : null}
                 </div>
 
-                <span className="text-[10px] sm:text-[11px] tracking-tight leading-tight mt-1 text-center truncate max-w-full">
+                <span className="text-[10px] sm:text-[10.5px] tracking-tight leading-tight mt-1 text-center truncate max-w-full px-0.5">
                   {item.label}
                 </span>
               </button>

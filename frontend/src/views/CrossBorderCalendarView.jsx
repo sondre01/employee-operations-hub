@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
-  Globe2,
   PlusCircle,
   Trash2,
   CheckCircle2,
@@ -103,53 +102,35 @@ export default function CrossBorderCalendarView() {
   const isAdmin = currentPersona?.role === 'AdminHr' || currentUser?.ticketingRole === 'SuperAdmin';
 
   return (
-    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
-              <Globe2 className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
-              Cross-Border Dual Calendar
-            </h1>
-          </div>
-          <p className="text-xs text-zinc-500 mt-1 mb-0">
-            Coordinated statutory holidays &amp; sprint calendars for 🇵🇭 Manila HQ and 🇩🇰 Copenhagen Clients.
-          </p>
-        </div>
-
-        {/* Tab & Action Controls */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
-            <button
-              type="button"
-              onClick={() => setActiveTab('calendar')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'calendar'
-                  ? 'bg-[#13264C] text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
-              }`}
-            >
-              Holidays ({holidays.length})
-            </button>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('add')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'add'
-                    ? 'bg-[#13264C] text-white shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-950'
-                }`}
-              >
-                <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
-                <span>Register Holiday</span>
-              </button>
-            )}
-          </div>
-        </div>
+    <div className="w-full flex flex-col gap-4">
+      {/* Tab Navigation */}
+      <div className="flex items-center bg-zinc-200/70 p-1 rounded-xl border border-zinc-200/90 w-fit max-w-full overflow-x-auto no-scrollbar shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('calendar')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            activeTab === 'calendar'
+              ? 'bg-[#13264C] text-white shadow-xs'
+              : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Holidays ({holidays.length})</span>
+        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('add')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'add'
+                ? 'bg-[#13264C] text-white shadow-xs'
+                : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+            }`}
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
+            <span>Register Holiday</span>
+          </button>
+        )}
       </div>
 
       {/* Success Notification */}
@@ -209,7 +190,7 @@ export default function CrossBorderCalendarView() {
       {activeTab === 'calendar' && (
         <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
           {/* Filter Bar */}
-          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-3.5 sm:px-4 py-2 sm:py-2.5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
               <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
                 <Calendar className="w-4 h-4" />
@@ -269,15 +250,15 @@ export default function CrossBorderCalendarView() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
+              <table className="w-full text-xs text-left border-collapse min-w-[680px]">
                 <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Country</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Date</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Country</th>
                     <th className="py-3 px-4">Holiday Name</th>
-                    <th className="py-3 px-4">Operational Status</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Operational Status</th>
                     <th className="py-3 px-4">Cross-Border Impact</th>
-                    {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
+                    {isAdmin && <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
@@ -336,7 +317,7 @@ export default function CrossBorderCalendarView() {
 
       {/* TAB 2: Register Holiday Form */}
       {activeTab === 'add' && isAdmin && (
-        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-xl">
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs w-full max-w-3xl">
           <div className="flex items-center gap-2 mb-4">
             <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
               <PlusCircle className="w-4 h-4 text-[#D61766]" />

@@ -109,53 +109,35 @@ export default function PolicyComplianceView() {
   const acknowledgedCount = policies.filter(p => p.isAcknowledgedByCurrentEmployee).length;
 
   return (
-    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
-              <ShieldCheck className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
-              Policies, Handbooks &amp; Compliance
-            </h1>
-          </div>
-          <p className="text-xs text-zinc-500 mt-1 mb-0">
-            Mandatory employment guidelines, NDA agreements, and statutory compliance handbooks.
-          </p>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
-            <button
-              type="button"
-              onClick={() => setActiveTab('policies')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'policies'
-                  ? 'bg-[#13264C] text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
-              }`}
-            >
-              Policies ({policies.length})
-            </button>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('publish')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'publish'
-                    ? 'bg-[#13264C] text-white shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-950'
-                }`}
-              >
-                <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
-                <span>Publish Policy</span>
-              </button>
-            )}
-          </div>
-        </div>
+    <div className="w-full flex flex-col gap-4">
+      {/* Tab Navigation */}
+      <div className="flex items-center bg-zinc-200/70 p-1 rounded-xl border border-zinc-200/90 w-fit max-w-full overflow-x-auto no-scrollbar shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('policies')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            activeTab === 'policies'
+              ? 'bg-[#13264C] text-white shadow-xs'
+              : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Policies ({policies.length})</span>
+        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('publish')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'publish'
+                ? 'bg-[#13264C] text-white shadow-xs'
+                : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+            }`}
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
+            <span>Publish Policy</span>
+          </button>
+        )}
       </div>
 
       {/* Success Notification */}
@@ -239,7 +221,7 @@ export default function PolicyComplianceView() {
                 >
                   {/* Policy Card Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
                         <BookOpen className="w-4 h-4" />
                       </span>
@@ -318,7 +300,7 @@ export default function PolicyComplianceView() {
 
       {/* TAB 2: Publish Policy Form */}
       {activeTab === 'publish' && isAdmin && (
-        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-xl">
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs w-full max-w-3xl">
           <div className="flex items-center gap-2 mb-4">
             <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
               <PlusCircle className="w-4 h-4 text-[#D61766]" />

@@ -50,12 +50,13 @@ export default function TicketingManagement({ onOpenCommandPalette }) {
         }`}
       >
         <FuturisticSidebar
-          title="Service Desk"
-          subtitle="Operations Center"
+          title=""
+          subtitle=""
           navItems={navItems}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
           onOpenCommandPalette={onOpenCommandPalette}
+          onClose={() => setMobileNavOpen(false)}
         />
       </div>
 

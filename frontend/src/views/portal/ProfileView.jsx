@@ -218,12 +218,12 @@ export default function ProfileView({ onNavigateTab }) {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto overflow-x-hidden p-3.5 sm:p-5 pb-12 flex flex-col gap-4 box-border select-none">
+    <div className="w-full flex flex-col gap-4">
       {/* ========================================================
           TOP ROW (TIER 1): 3 Primary Box Containers
           [Left: Employment Info & Leave Balances] [Middle (Wider): Time Clock] [Right: Announcements]
           ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.36fr_1.1fr] gap-4 items-stretch shrink-0 min-h-[380px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.36fr_1.1fr] gap-4 items-stretch shrink-0 lg:min-h-[380px]">
         
         {/* BOX 1 (LEFT): 2 Containers - Container 1: Profile & Info, Container 2: Vacation & Sick Leave Balances */}
         <div className="flex flex-col gap-4 h-full">
@@ -411,7 +411,7 @@ export default function ProfileView({ onNavigateTab }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[380px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[380px]"
         >
 
           {/* Centered Enlarged Date Today & Live PH Time */}
@@ -502,7 +502,7 @@ export default function ProfileView({ onNavigateTab }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[380px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[380px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">
@@ -595,14 +595,14 @@ export default function ProfileView({ onNavigateTab }) {
       {/* ========================================================
           MIDDLE ROW (TIER 2): 3 Containers (Requirements, Pending Requests, Payroll)
           ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.36fr_1.1fr] gap-4 items-stretch shrink-0 min-h-[225px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.36fr_1.1fr] gap-4 items-stretch shrink-0 lg:min-h-[225px]">
         
         {/* BOTTOM BOX 1: Onboarding Documents & Requirements Checklist (Fulfillment Chart) */}
         <motion.section
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.26 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[225px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[225px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">
@@ -620,7 +620,7 @@ export default function ProfileView({ onNavigateTab }) {
           </div>
 
           {/* Fulfillment Chart & Stat Overview - Centered inside container */}
-          <div className="flex items-center justify-center gap-4 sm:gap-6 my-auto w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 my-auto w-full py-2">
             {/* Significantly Enlarged Circular Progress Gauge */}
             <div className="relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 shrink-0">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
@@ -649,7 +649,7 @@ export default function ProfileView({ onNavigateTab }) {
               </div>
             </div>
 
-            <div className="shrink-0 flex flex-col justify-center">
+            <div className="flex-1 min-w-0 flex flex-col justify-center text-center sm:text-left">
               <div className="text-sm sm:text-base font-bold text-zinc-900 tracking-tight leading-snug">
                 6 of 8 Requirements Cleared
               </div>
@@ -666,7 +666,7 @@ export default function ProfileView({ onNavigateTab }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[225px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[225px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">
@@ -684,7 +684,7 @@ export default function ProfileView({ onNavigateTab }) {
           </div>
 
           {/* Body: Separated Timestamps with Unconnected Lines */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:gap-y-5 my-auto py-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 sm:gap-y-4 my-auto py-2.5">
             {/* Clock in */}
             <div className="flex items-center justify-between pb-2 sm:pb-2.5 border-b border-zinc-200/90">
               <span className="text-xs sm:text-sm font-medium text-zinc-500">Clock in -</span>
@@ -726,7 +726,7 @@ export default function ProfileView({ onNavigateTab }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[225px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[225px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">
@@ -802,14 +802,14 @@ export default function ProfileView({ onNavigateTab }) {
           [Middle: Pending Requests]
           [Right: Payroll Cut-Offs]
           ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.36fr_1.1fr] gap-4 items-stretch shrink-0 min-h-[225px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.36fr_1.1fr] gap-4 items-stretch shrink-0 lg:min-h-[225px]">
         
         {/* TIER 3 - BOX 7 (LEFT): Tickets Summary */}
         <motion.section
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[225px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[225px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">
@@ -870,7 +870,7 @@ export default function ProfileView({ onNavigateTab }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.34 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[225px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[225px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">
@@ -895,7 +895,7 @@ export default function ProfileView({ onNavigateTab }) {
           </div>
 
           {/* Body: Split into KPI Stat & Breakdown Cards */}
-          <div className="grid grid-cols-[1.1fr_2fr] gap-2.5 items-center my-auto py-1">
+          <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_2fr] gap-2.5 items-center my-auto py-1">
             {/* KPI Stat & Approver Info */}
             <div className="bg-zinc-100/90 border border-zinc-200 p-2.5 sm:p-3 rounded-xl">
               <div className="flex items-baseline gap-2">
@@ -943,7 +943,7 @@ export default function ProfileView({ onNavigateTab }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
-          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden min-h-[225px]"
+          className="h-full bg-white rounded-xl border border-zinc-200/90 p-4 shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden lg:min-h-[225px]"
         >
           {/* Header */}
           <div className="flex justify-between items-center shrink-0">

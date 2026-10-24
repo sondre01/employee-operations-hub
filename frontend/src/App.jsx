@@ -59,19 +59,19 @@ function HubShell() {
       />
 
       {/* Consolidated Single Modern Header Bar */}
-      <header className="shrink-0 h-13 px-4 sm:px-6 bg-white/95 backdrop-blur-md border-b border-zinc-200/80 flex items-center justify-between gap-3 shadow-2xs z-30">
+      <header className="shrink-0 h-13 px-3 sm:px-6 bg-white/95 backdrop-blur-md border-b border-zinc-200/80 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs z-30">
         {/* Left: Brand Identity */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#13264C] to-[#0A152A] text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0 tracking-tight border border-white/20">
             M
           </div>
-          <span className="text-sm sm:text-base font-bold text-zinc-950 tracking-tight truncate">
+          <span className="text-xs sm:text-base font-bold text-zinc-950 tracking-tight truncate max-w-[130px] sm:max-w-none">
             Employee Operations Hub
           </span>
         </div>
 
         {/* Center / Right: Quick Jump Pill & Dimension Switcher */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           {/* Futuristic Command Palette Trigger */}
           <button
             type="button"
@@ -93,14 +93,14 @@ function HubShell() {
               type="button"
               data-ripple
               onClick={() => setActiveDimension('portal')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none whitespace-nowrap ${
                 activeDimension === 'portal'
                   ? 'bg-[#13264C] text-white shadow-xs'
                   : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Employee Portal</span>
+              <span>Portal</span>
             </button>
 
             {/* Ticketing Management Tab */}
@@ -119,7 +119,7 @@ function HubShell() {
                     ? 'Access Ticketing System Management'
                     : 'Requires operational desk access granted by DevOps Manager / Admin'
                 }
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all outline-none focus:outline-none focus-visible:outline-none ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all outline-none focus:outline-none focus-visible:outline-none whitespace-nowrap ${
                   !hasTicketingAccess
                     ? 'text-zinc-400 cursor-not-allowed opacity-60'
                     : activeDimension === 'ticketing'

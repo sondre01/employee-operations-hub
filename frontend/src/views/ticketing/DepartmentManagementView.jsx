@@ -87,11 +87,11 @@ export default function DepartmentManagementView() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 self-start sm:self-auto">
+        <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 self-start sm:self-auto max-w-full overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTab('list')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'list'
                 ? 'bg-[#13264C] text-white shadow-xs'
                 : 'text-zinc-600 hover:text-zinc-950'
@@ -103,7 +103,7 @@ export default function DepartmentManagementView() {
             <button
               type="button"
               onClick={() => setActiveTab('create')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'create'
                   ? 'bg-[#13264C] text-white shadow-xs'
                   : 'text-zinc-600 hover:text-zinc-950'

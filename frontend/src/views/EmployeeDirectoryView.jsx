@@ -228,7 +228,7 @@ export default function EmployeeDirectoryView() {
       {activeTab === 'roster' && (
         <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
           {/* Filters Bar */}
-          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-wrap items-center justify-between gap-3">
+          <div className="px-3.5 sm:px-4 py-2 sm:py-2.5 border-b border-zinc-200/80 flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="relative w-48 sm:w-60">
                 <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
@@ -287,16 +287,16 @@ export default function EmployeeDirectoryView() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
+              <table className="w-full text-xs text-left border-collapse min-w-[760px]">
                 <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-3 px-4">Staff Member</th>
-                    <th className="py-3 px-4">Position</th>
-                    <th className="py-3 px-4">Classification</th>
-                    <th className="py-3 px-4">Client Org / Dept</th>
-                    <th className="py-3 px-4">Tech Stack</th>
-                    <th className="py-3 px-4">Hardware</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Staff Member</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Position</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Classification</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Client Org / Dept</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Tech Stack</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Hardware</th>
+                    <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">

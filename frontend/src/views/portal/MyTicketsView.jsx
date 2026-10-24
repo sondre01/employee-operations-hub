@@ -100,51 +100,33 @@ export default function MyTicketsView() {
   };
 
   return (
-    <div className="flex flex-col gap-5 max-w-7xl mx-auto font-sans select-none pb-8">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
-              <Ticket className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-bold text-zinc-950 tracking-tight m-0">
-              My Support Tickets
-            </h1>
-          </div>
-          <p className="text-xs text-zinc-500 mt-1 mb-0">
-            Track operational requests, hardware inquiries, HR certificates, and internal IT service tickets.
-          </p>
-        </div>
-
-        {/* Tab Switcher & Action Button */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center bg-zinc-100 p-1 rounded-xl border border-zinc-200/80">
-            <button
-              type="button"
-              onClick={() => setActiveTab('history')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'history'
-                  ? 'bg-[#13264C] text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
-              }`}
-            >
-              Submitted Tickets ({tickets.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('raise')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'raise'
-                  ? 'bg-[#13264C] text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
-              }`}
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
-              <span>Raise Ticket</span>
-            </button>
-          </div>
-        </div>
+    <div className="w-full flex flex-col gap-4">
+      {/* Tab Navigation */}
+      <div className="flex items-center bg-zinc-200/70 p-1 rounded-xl border border-zinc-200/90 w-fit max-w-full overflow-x-auto no-scrollbar shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            activeTab === 'history'
+              ? 'bg-[#13264C] text-white shadow-xs'
+              : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+          }`}
+        >
+          <Ticket className="w-4 h-4" />
+          <span>Submitted Tickets ({tickets.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('raise')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            activeTab === 'raise'
+              ? 'bg-[#13264C] text-white shadow-xs'
+              : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+          }`}
+        >
+          <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
+          <span>Raise Ticket</span>
+        </button>
       </div>
 
       {/* Success Notification */}
@@ -202,29 +184,29 @@ export default function MyTicketsView() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
+              <table className="w-full text-xs text-left border-collapse min-w-[720px]">
                 <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-3 px-4">Ticket</th>
-                    <th className="py-3 px-4">Department</th>
-                    <th className="py-3 px-4">Priority</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Ticket</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Department</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Priority</th>
                     <th className="py-3 px-4">Summary</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Resolver</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Resolver</th>
                     <th className="py-3 px-4">Notes</th>
-                    <th className="py-3 px-4">Date Filed</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Date Filed</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
                   {tickets.map((t) => (
                     <tr key={t.id} className="hover:bg-zinc-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-[#13264C]">
+                      <td className="py-3 px-4 font-mono font-bold text-[#13264C] whitespace-nowrap">
                         #{t.id}
                       </td>
-                      <td className="py-3 px-4 text-zinc-700 font-semibold">
+                      <td className="py-3 px-4 text-zinc-700 font-semibold whitespace-nowrap">
                         {t.departmentName || 'General Desk'}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                             t.priority === 'Urgent'
@@ -250,7 +232,7 @@ export default function MyTicketsView() {
                         <div className="font-bold text-zinc-950 max-w-xs truncate">{t.title}</div>
                         <div className="text-zinc-500 text-[11px] max-w-xs truncate">{t.description}</div>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <span
                           className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                             t.status === 'Resolved'
@@ -263,7 +245,7 @@ export default function MyTicketsView() {
                           {t.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-zinc-600">
+                      <td className="py-3 px-4 text-zinc-600 whitespace-nowrap">
                         {t.assignedToEmployeeName ? (
                           <span className="font-semibold text-zinc-900">{t.assignedToEmployeeName}</span>
                         ) : (
@@ -287,7 +269,7 @@ export default function MyTicketsView() {
 
       {/* TAB 2: Raise New Support Ticket Form */}
       {activeTab === 'raise' && (
-        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs max-w-2xl">
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 shadow-xs w-full max-w-3xl">
           <div className="flex items-center gap-2 mb-4">
             <span className="p-1 rounded-md bg-[#13264C]/10 text-[#13264C]">
               <PlusCircle className="w-4 h-4 text-[#D61766]" />

@@ -221,7 +221,7 @@ export default function AccessControlView() {
       {activeTab === 'roster' && (
         <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
           {/* Search Toolbar */}
-          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-3.5 sm:px-4 py-2 sm:py-2.5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="relative w-full sm:w-72">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
               <input
@@ -244,18 +244,18 @@ export default function AccessControlView() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
+              <table className="w-full text-xs text-left border-collapse min-w-[780px]">
                 <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-3 px-4">Employee</th>
-                    <th className="py-3 px-4">Class</th>
-                    <th className="py-3 px-4">Position</th>
-                    <th className="py-3 px-4">Department</th>
-                    <th className="py-3 px-4">Operational Role</th>
-                    <th className="py-3 px-4">Desk Access</th>
-                    <th className="py-3 px-4">Delegation</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Employee</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Class</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Position</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Department</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Operational Role</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Desk Access</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Delegation</th>
                     {(isSuperAdmin || canAssignEmployees) && (
-                      <th className="py-3 px-4 text-right">Actions</th>
+                      <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                     )}
                   </tr>
                 </thead>

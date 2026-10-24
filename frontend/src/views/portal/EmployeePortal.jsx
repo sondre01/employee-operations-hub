@@ -57,15 +57,12 @@ export default function EmployeePortal({ onOpenCommandPalette }) {
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
           onOpenCommandPalette={onOpenCommandPalette}
+          onClose={() => setMobileNavOpen(false)}
         />
       </div>
 
       {/* Main Content Area */}
-      <main
-        className={`flex-1 h-full min-w-0 min-h-0 box-border bg-zinc-50/50 flex flex-col ${
-          activeTab === 'profile' ? 'overflow-hidden p-0' : 'p-3 sm:p-5 overflow-y-auto'
-        }`}
-      >
+      <main className="flex-1 h-full min-w-0 min-h-0 box-border bg-zinc-50/50 flex flex-col overflow-hidden p-0">
         {/* Mobile Navigation Toggle Bar */}
         <div className="md:hidden flex items-center justify-between p-2.5 border-b border-zinc-200/80 shrink-0">
           <button
@@ -81,9 +78,9 @@ export default function EmployeePortal({ onOpenCommandPalette }) {
           </span>
         </div>
 
-        <div className="w-full h-full flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="h-full w-full overflow-y-auto overflow-x-hidden p-3.5 sm:p-5 pb-12 flex flex-col gap-4 box-border select-none">
           {activeTab === 'profile' && <ProfileView onNavigateTab={handleSelectTab} />}
-          {activeTab === 'attendance' && <AttendanceView />}
+          {activeTab === 'attendance' && <AttendanceView onNavigateTab={handleSelectTab} />}
           {activeTab === 'requests' && <TimeRequestsView />}
           {activeTab === 'mytickets' && <MyTicketsView />}
           {activeTab === 'calendar' && <CrossBorderCalendarView />}
