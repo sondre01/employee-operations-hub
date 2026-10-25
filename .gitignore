@@ -18,6 +18,7 @@ yarn-error.log*
 # Environment & Databases
 *.env
 *.env.local
+**/appsettings.Development.json
 pgdata/
 *.db
 *.db-shm

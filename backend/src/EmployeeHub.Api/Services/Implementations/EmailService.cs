@@ -36,12 +36,13 @@ public class EmailService : IEmailService
             ?? Environment.GetEnvironmentVariable("GMAIL_APP_PASSWORD")
             ?? _config.GetValue<string>("Email:SmtpPass")
             ?? string.Empty;
+        pass = pass.Trim().Replace(" ", "");
 
         var from = Environment.GetEnvironmentVariable("SMTP_FROM")
             ?? _config.GetValue<string>("Email:FromAddress")
             ?? (string.IsNullOrWhiteSpace(user) ? "no-reply@company.io" : user);
 
-        return (host, port, user, pass, from);
+        return (host, port, user.Trim(), pass, from);
     }
 
     public async Task SendVerificationCodeAsync(string toEmail, string code, string recipientName = "")

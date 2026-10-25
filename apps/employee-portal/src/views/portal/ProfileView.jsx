@@ -140,6 +140,14 @@ export default function ProfileView({ onNavigateTab }) {
 
   const names = parseNames();
   const initials = `${(names.first[0] || 'M')}${(names.last[0] || 'V')}`.toUpperCase();
+  const fullNameDisplay = `${names.first} ${names.last}`.trim();
+  const getDynamicNameSizeClass = (str) => {
+    const len = (str || '').length;
+    if (len > 24) return 'text-[9.5px] leading-tight';
+    if (len > 18) return 'text-[10px] sm:text-[11px] leading-tight';
+    if (len > 13) return 'text-[11px] sm:text-xs leading-snug';
+    return 'text-xs sm:text-sm leading-snug';
+  };
   const isDedicated = (currentUser?.employmentType === 'ClientDedicated') || (currentUser?.role === 'Developer' && !currentUser?.isInternal);
 
   const employeeId = currentUser?.employeeCode || `EMP-2026-${(currentUser?.id || 7).toString().padStart(3, '0')}`;
@@ -237,7 +245,7 @@ export default function ProfileView({ onNavigateTab }) {
             {/* Profile (Left: Picture + Name below) & Info (Right: Right-Aligned Details) */}
             <div className="flex items-center gap-3.5 sm:gap-4 my-auto min-h-0">
               {/* Left Side: Avatar & Name underneath */}
-              <div className="flex flex-col items-center shrink-0 w-22 sm:w-26">
+              <div className="flex flex-col items-center shrink-0 w-24 sm:w-28 max-w-[120px]">
                 <div
                   className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-zinc-100 border border-zinc-200/90 shadow-xs ring-2 ring-zinc-50 flex items-center justify-center overflow-hidden shrink-0 select-none"
                   title="Corporate profile avatar"
@@ -260,10 +268,12 @@ export default function ProfileView({ onNavigateTab }) {
                   />
                 </div>
                 <div
-                  className="mt-2 text-xs sm:text-sm font-black text-zinc-950 text-center tracking-tight leading-tight w-full truncate"
-                  title={`${names.first} ${names.last}`}
+                  className={`mt-2 font-black text-zinc-950 text-center tracking-tight w-full break-words ${getDynamicNameSizeClass(
+                    fullNameDisplay
+                  )}`}
+                  title={fullNameDisplay}
                 >
-                  {names.first} {names.last}
+                  {fullNameDisplay}
                 </div>
               </div>
 
