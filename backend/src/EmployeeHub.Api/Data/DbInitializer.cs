@@ -59,6 +59,7 @@ END $$;";
             try
             {
                 await context.Database.ExecuteSqlRawAsync(moveSchemaSql);
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE employee_hub.\"Departments\" ADD COLUMN IF NOT EXISTS \"SupportEmail\" VARCHAR(150) NOT NULL DEFAULT '';");
                 await context.Database.MigrateAsync();
             }
             catch
@@ -72,6 +73,7 @@ END $$;";
             try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Employees ADD COLUMN FirstName TEXT NOT NULL DEFAULT '';"); } catch { }
             try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Employees ADD COLUMN MiddleName TEXT NOT NULL DEFAULT '';"); } catch { }
             try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Employees ADD COLUMN LastName TEXT NOT NULL DEFAULT '';"); } catch { }
+            try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE Departments ADD COLUMN SupportEmail TEXT NOT NULL DEFAULT '';"); } catch { }
         }
 
         if (await context.Departments.AnyAsync() && await context.Employees.AnyAsync())
@@ -85,7 +87,22 @@ END $$;";
                 else if (parts.Length == 2) { staff.FirstName = parts[0]; staff.LastName = parts[1]; }
                 else if (parts.Length > 2) { staff.FirstName = parts[0]; staff.MiddleName = string.Join(" ", parts.Skip(1).Take(parts.Length - 2)); staff.LastName = parts[^1]; }
             }
-            if (existingStaff.Count > 0)
+
+            // Backfill department designated support emails
+            var existingDepts = await context.Departments.ToListAsync();
+            foreach (var d in existingDepts)
+            {
+                if (string.IsNullOrWhiteSpace(d.SupportEmail))
+                {
+                    if (d.Name.Contains("Dev Operation")) d.SupportEmail = "devops-support@company.io";
+                    else if (d.Name.Contains("IT Team")) d.SupportEmail = "it-support@company.io";
+                    else if (d.Name.Contains("HR")) d.SupportEmail = "hr-support@company.io";
+                    else if (d.Name.Contains("Finance")) d.SupportEmail = "finance-support@company.io";
+                    else d.SupportEmail = $"{d.Name.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")}@company.io";
+                }
+            }
+
+            if (existingStaff.Count > 0 || existingDepts.Any(d => !string.IsNullOrWhiteSpace(d.SupportEmail)))
             {
                 await context.SaveChangesAsync();
             }
@@ -97,6 +114,7 @@ END $$;";
         {
             Name = "Dev Operation",
             Description = "DevOps engineering, Kubernetes cluster management, CI/CD pipelines, and cloud infrastructure.",
+            SupportEmail = "devops-support@company.io",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
@@ -104,6 +122,7 @@ END $$;";
         {
             Name = "IT Team",
             Description = "Workstation hardware custody, developer laptop provisioning, WireGuard VPN, and office network equipment.",
+            SupportEmail = "it-support@company.io",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
@@ -111,6 +130,7 @@ END $$;";
         {
             Name = "HR/Recruitment",
             Description = "People operations, Certificate of Employment (COE), HMO enrollment, statutory benefits (SSS/PhilHealth/Pag-IBIG), and leaves.",
+            SupportEmail = "hr-support@company.io",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
@@ -118,6 +138,7 @@ END $$;";
         {
             Name = "Finance",
             Description = "Payroll, statutory remittance compliance, client billing, equipment purchase reimbursements, and tax document processing.",
+            SupportEmail = "finance-support@company.io",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 

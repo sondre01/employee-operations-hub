@@ -38,3 +38,18 @@ public record UpdateTicketStatusDto(
 public record AssignTicketDto(
     int AssignedToEmployeeId
 );
+
+public record InboundEmailTicketDto(
+    string FromEmail,
+    string ToEmail,
+    string Subject,
+    string Body,
+    string? SenderName = null,
+    string? Priority = "Medium"
+);
+
+public record InboundEmailResultDto(
+    bool Success,
+    string Message,
+    TicketDto? Ticket = null
+);

@@ -19,4 +19,5 @@ public interface ITicketService
     Task<TicketDto?> AssignTicketAsync(int id, int assignedToEmployeeId);
     Task<TicketStatsSummaryDto> GetTicketStatsAsync(int? callerEmployeeId);
     Task<bool> DeleteTicketAsync(int id);
+    Task<InboundEmailResultDto> ProcessInboundEmailAsync(InboundEmailTicketDto dto);
 }

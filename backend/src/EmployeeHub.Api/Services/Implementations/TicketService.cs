@@ -10,10 +10,12 @@ namespace EmployeeHub.Api.Services.Implementations;
 public class TicketService : ITicketService
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public TicketService(AppDbContext context)
+    public TicketService(AppDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     public async Task<List<TicketDto>> GetTicketsAsync(
@@ -238,6 +240,116 @@ public class TicketService : ITicketService
         _context.Tickets.Remove(ticket);
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<InboundEmailResultDto> ProcessInboundEmailAsync(InboundEmailTicketDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FromEmail) || string.IsNullOrWhiteSpace(dto.Subject))
+        {
+            return new InboundEmailResultDto(false, "FromEmail and Subject are required.");
+        }
+
+        var fromEmail = dto.FromEmail.Trim().ToLowerInvariant();
+        var toEmail = dto.ToEmail?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        // 1. Resolve Department by SupportEmail or designated email alias
+        var departments = await _context.Departments.ToListAsync();
+        var matchedDept = departments.FirstOrDefault(d => 
+            !string.IsNullOrWhiteSpace(d.SupportEmail) && d.SupportEmail.ToLowerInvariant() == toEmail);
+
+        if (matchedDept == null && !string.IsNullOrWhiteSpace(toEmail))
+        {
+            if (toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud"))
+            {
+                matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Dev Operation"));
+            }
+            else if (toEmail.Contains("it") || toEmail.Contains("hardware") || toEmail.Contains("laptop") || toEmail.Contains("support"))
+            {
+                matchedDept = departments.FirstOrDefault(d => d.Name.Contains("IT Team"));
+            }
+            else if (toEmail.Contains("hr") || toEmail.Contains("recruit") || toEmail.Contains("coe") || toEmail.Contains("hmo") || toEmail.Contains("leave"))
+            {
+                matchedDept = departments.FirstOrDefault(d => d.Name.Contains("HR"));
+            }
+            else if (toEmail.Contains("finance") || toEmail.Contains("payroll") || toEmail.Contains("reimburse") || toEmail.Contains("tax"))
+            {
+                matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Finance"));
+            }
+        }
+
+        matchedDept ??= departments.FirstOrDefault() ?? new Department { Name = "General Support" };
+
+        // 2. Find or register sender Employee
+        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.WorkEmail.ToLower() == fromEmail);
+        if (employee == null)
+        {
+            var senderName = !string.IsNullOrWhiteSpace(dto.SenderName)
+                ? dto.SenderName.Trim()
+                : fromEmail.Split('@')[0].Replace('.', ' ').Replace('_', ' ');
+
+            employee = new Employee
+            {
+                FullName = senderName,
+                WorkEmail = fromEmail,
+                JobTitle = "Inbound Email Requester",
+                EmploymentType = EmploymentType.ClientDedicated,
+                Role = UserRole.Developer,
+                PasswordHash = string.Empty,
+                IsInternal = false,
+                IsActive = true,
+                PrimaryTechStack = "Email Integration",
+                CreatedAtUtc = DateTime.UtcNow
+            };
+            _context.Employees.Add(employee);
+            await _context.SaveChangesAsync();
+        }
+
+        // 3. Queue selection
+        var queue = (matchedDept.Name.Contains("HR") || matchedDept.Name.Contains("Finance"))
+            ? TicketQueue.HrLegal
+            : TicketQueue.ItInfrastructure;
+
+        // 4. Create Ticket
+        var priority = !string.IsNullOrWhiteSpace(dto.Priority) ? dto.Priority.Trim() : "Medium";
+        var ticket = new Ticket
+        {
+            Title = dto.Subject.Trim(),
+            Description = !string.IsNullOrWhiteSpace(dto.Body) ? dto.Body.Trim() : "(No email body content provided)",
+            Priority = priority,
+            DepartmentId = matchedDept.Id > 0 ? matchedDept.Id : null,
+            Queue = queue,
+            Status = TicketStatus.Open,
+            CreatedByEmployeeId = employee.Id,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        _context.Tickets.Add(ticket);
+        await _context.SaveChangesAsync();
+
+        ticket.CreatedByEmployee = employee;
+        ticket.Department = matchedDept;
+
+        // 5. Send automated confirmation email back to sender
+        try
+        {
+            await _emailService.SendTicketConfirmationAsync(
+                employee.WorkEmail,
+                ticket.Id,
+                ticket.Title,
+                matchedDept.Name
+            );
+        }
+        catch
+        {
+            // Non-blocking confirmation
+        }
+
+        return new InboundEmailResultDto(
+            true,
+            $"Ticket #{ticket.Id} created successfully for {matchedDept.Name}.",
+            MapToDto(ticket)
+        );
     }
 
     private static TicketDto MapToDto(Ticket t)

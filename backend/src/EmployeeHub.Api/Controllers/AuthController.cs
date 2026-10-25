@@ -51,6 +51,20 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("send-verification-code")]
+    public async Task<ActionResult<SendVerificationCodeResponseDto>> SendVerificationCode([FromBody] SendVerificationCodeRequestDto dto)
+    {
+        try
+        {
+            var result = await _authService.SendVerificationCodeAsync(dto.Email);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet("personas")]
     public ActionResult<List<QuickPersonaDto>> GetPersonas()
     {

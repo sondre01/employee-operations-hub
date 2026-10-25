@@ -7,6 +7,16 @@ public record LoginRequestDto(
     string Password
 );
 
+public record SendVerificationCodeRequestDto(
+    string Email
+);
+
+public record SendVerificationCodeResponseDto(
+    bool Success,
+    string Message,
+    string? DevCode = null
+);
+
 public record RegisterRequestDto(
     string? FirstName,
     string? MiddleName,
@@ -15,6 +25,7 @@ public record RegisterRequestDto(
     string WorkEmail,
     string Password,
     string JobTitle,
+    string? VerificationCode = null,
     bool IsInternal = false,
     int? DepartmentId = null,
     string? ClientName = null,

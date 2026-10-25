@@ -38,7 +38,8 @@ else
         options.UseSqlite(sqliteConn));
 }
 
-// 2. Register Business Logic Services
+builder.Services.AddSingleton<IVerificationService, VerificationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IAccessService, AccessService>();

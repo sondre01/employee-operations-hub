@@ -48,4 +48,12 @@ public class DepartmentsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPatch("{id:int}")]
+    public async Task<ActionResult<DepartmentDto>> Update(int id, [FromBody] UpdateDepartmentDto dto)
+    {
+        var result = await _departmentService.UpdateDepartmentAsync(id, dto);
+        if (result == null) return NotFound(new { message = $"Department with ID {id} not found." });
+        return Ok(result);
+    }
 }

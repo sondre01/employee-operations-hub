@@ -92,4 +92,15 @@ public class TicketsController : ControllerBase
         if (!success) return NotFound(new { message = $"Ticket with ID {id} not found." });
         return NoContent();
     }
+
+    [HttpPost("inbound-email")]
+    public async Task<ActionResult<InboundEmailResultDto>> InboundEmail([FromBody] InboundEmailTicketDto dto)
+    {
+        var result = await _ticketService.ProcessInboundEmailAsync(dto);
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+        return Ok(result);
+    }
 }

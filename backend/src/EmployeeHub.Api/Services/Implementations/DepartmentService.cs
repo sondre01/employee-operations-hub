@@ -25,6 +25,7 @@ public class DepartmentService : IDepartmentService
                 d.Id,
                 d.Name,
                 d.Description,
+                d.SupportEmail,
                 d.Members.Count,
                 d.Tickets.Count,
                 d.CreatedAtUtc
@@ -45,6 +46,7 @@ public class DepartmentService : IDepartmentService
             d.Id,
             d.Name,
             d.Description,
+            d.SupportEmail,
             d.Members.Count,
             d.Tickets.Count,
             d.CreatedAtUtc
@@ -60,10 +62,15 @@ public class DepartmentService : IDepartmentService
             throw new ArgumentException($"Department '{dto.Name}' already exists.");
         }
 
+        var supportEmail = !string.IsNullOrWhiteSpace(dto.SupportEmail)
+            ? dto.SupportEmail.Trim().ToLowerInvariant()
+            : $"{name.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")}@company.io";
+
         var department = new Department
         {
             Name = name,
             Description = dto.Description.Trim(),
+            SupportEmail = supportEmail,
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -74,9 +81,45 @@ public class DepartmentService : IDepartmentService
             department.Id,
             department.Name,
             department.Description,
+            department.SupportEmail,
             0,
             0,
             department.CreatedAtUtc
+        );
+    }
+
+    public async Task<DepartmentDto?> UpdateDepartmentAsync(int id, UpdateDepartmentDto dto)
+    {
+        var dept = await _context.Departments
+            .Include(d => d.Members)
+            .Include(d => d.Tickets)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (dept == null) return null;
+
+        if (!string.IsNullOrWhiteSpace(dto.Name))
+        {
+            dept.Name = dto.Name.Trim();
+        }
+        if (dto.Description != null)
+        {
+            dept.Description = dto.Description.Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(dto.SupportEmail))
+        {
+            dept.SupportEmail = dto.SupportEmail.Trim().ToLowerInvariant();
+        }
+
+        await _context.SaveChangesAsync();
+
+        return new DepartmentDto(
+            dept.Id,
+            dept.Name,
+            dept.Description,
+            dept.SupportEmail,
+            dept.Members.Count,
+            dept.Tickets.Count,
+            dept.CreatedAtUtc
         );
     }
 }

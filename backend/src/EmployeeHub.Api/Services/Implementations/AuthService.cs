@@ -11,10 +11,44 @@ namespace EmployeeHub.Api.Services.Implementations;
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IVerificationService _verificationService;
 
-    public AuthService(AppDbContext context)
+    public AuthService(AppDbContext context, IEmailService emailService, IVerificationService verificationService)
     {
         _context = context;
+        _emailService = emailService;
+        _verificationService = verificationService;
+    }
+
+    public async Task<SendVerificationCodeResponseDto> SendVerificationCodeAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email is required.");
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        if (!normalizedEmail.Contains('@') || !normalizedEmail.Contains('.'))
+        {
+            throw new ArgumentException("Please enter a valid email address (e.g. name@gmail.com).");
+        }
+
+        var exists = await _context.Employees.AnyAsync(e => e.WorkEmail.ToLower() == normalizedEmail);
+        if (exists)
+        {
+            throw new ArgumentException($"An employee account with email '{email}' already exists. Please sign in instead.");
+        }
+
+        var code = await _verificationService.GenerateAndSaveCodeAsync(normalizedEmail);
+        await _emailService.SendVerificationCodeAsync(normalizedEmail, code);
+
+        return new SendVerificationCodeResponseDto(
+            true,
+            $"A 6-digit verification code has been dispatched to {email}. Please check your inbox or spam folder.",
+            _verificationService.GetLastCodeForDev(normalizedEmail)
+        );
     }
 
     public async Task<AuthResponseDto?> AuthenticateAsync(LoginRequestDto dto)
@@ -35,6 +69,25 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto dto)
     {
         var email = dto.WorkEmail.Trim().ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(dto.VerificationCode))
+        {
+            var isCodeValid = _verificationService.VerifyCode(email, dto.VerificationCode);
+            if (!isCodeValid)
+            {
+                throw new ArgumentException("Invalid or expired 6-digit verification code. Please request a new code.");
+            }
+        }
+        else
+        {
+            // If verification code is completely omitted
+            var devCode = _verificationService.GetLastCodeForDev(email);
+            if (devCode != null)
+            {
+                throw new ArgumentException("Please enter the 6-digit verification code sent to your Gmail.");
+            }
+        }
+
         var exists = await _context.Employees.AnyAsync(e => e.WorkEmail.ToLower() == email);
         if (exists)
         {

@@ -186,6 +186,19 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const sendVerificationCode = async (email) => {
+    const res = await fetch(`${API_BASE}/auth/send-verification-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to send verification code');
+    }
+    return data;
+  };
+
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('ops_hub_user');
@@ -221,6 +234,7 @@ export function AuthProvider({ children }) {
         login,
         quickLogin,
         register,
+        sendVerificationCode,
         logout,
         fetchPersonas,
         isSuperAdmin,

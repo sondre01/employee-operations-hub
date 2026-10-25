@@ -14,7 +14,10 @@ import {
   Send,
   X,
   Sparkles,
-  Inbox
+  Inbox,
+  Mail,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export default function MyTicketsView() {
@@ -23,6 +26,7 @@ export default function MyTicketsView() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [copiedDeptId, setCopiedDeptId] = useState(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -35,6 +39,13 @@ export default function MyTicketsView() {
   const [submitting, setSubmitting] = useState(false);
 
   const [activeTab, setActiveTab] = useState('history'); // 'history' | 'raise'
+
+  const handleCopySupportEmail = (deptId, email) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedDeptId(deptId);
+    setTimeout(() => setCopiedDeptId(null), 2000);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -137,6 +148,56 @@ export default function MyTicketsView() {
           <PlusCircle className="w-3.5 h-3.5 text-[#D61766]" />
           <span>Raise Ticket</span>
         </button>
+      </div>
+
+      {/* Designated Inbound Email Desks Card */}
+      <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 shadow-xs flex flex-col gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#13264C]/10 text-[#13264C]">
+              <Mail className="w-4 h-4" />
+            </span>
+            <div>
+              <div className="text-xs font-bold text-zinc-950">Email-to-Ticket Routing Desks</div>
+              <div className="text-[11px] text-zinc-500">
+                You can also raise tickets directly by sending an email from your Gmail to any designated department inbox:
+              </div>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
+            Auto-Ingestion Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1">
+          {departments.map((dept) => {
+            const email = dept.supportEmail || `${dept.name.toLowerCase().replace(/ /g, '-')}@company.io`;
+            const isCopied = copiedDeptId === dept.id;
+            return (
+              <div
+                key={dept.id}
+                className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-200/70 flex items-center justify-between hover:bg-white transition-all"
+              >
+                <div className="min-w-0 pr-1">
+                  <div className="text-[11px] font-bold text-zinc-900 truncate">{dept.name}</div>
+                  <div className="font-mono text-[10px] text-[#13264C] font-semibold truncate">{email}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopySupportEmail(dept.id, email)}
+                  title="Copy email address"
+                  className="p-1.5 rounded-lg hover:bg-zinc-200/80 text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer shrink-0"
+                >
+                  {isCopied ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Success Notification */}
