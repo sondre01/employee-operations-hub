@@ -157,6 +157,12 @@ public class TicketService : ITicketService
             throw new ArgumentException($"Employee with ID {assignedToEmployeeId} not found.");
         }
 
+        // Enforce department co-member constraint
+        if (ticket.DepartmentId.HasValue && employee.DepartmentId.HasValue && employee.DepartmentId.Value != ticket.DepartmentId.Value)
+        {
+            throw new ArgumentException($"Employee '{employee.FullName}' belongs to a different department and cannot be assigned to this {ticket.Department?.Name ?? "department"} ticket.");
+        }
+
         ticket.AssignedToEmployeeId = assignedToEmployeeId;
         ticket.AssignedToEmployee = employee;
         if (ticket.Status == TicketStatus.Open)

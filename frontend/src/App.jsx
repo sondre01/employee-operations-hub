@@ -18,8 +18,13 @@ import {
 function HubShell() {
   const { currentUser, hasTicketingAccess, isSuperAdmin, isDevOpsAdmin, canAssignEmployees } = useAuth();
   const isInternal = Boolean(currentUser?.isInternal);
-  const [activeDimension, setActiveDimension] = useState('portal'); // 'portal' | 'ticketing'
+  const appMode = import.meta.env.VITE_APP_MODE || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('mode') : null) || 'all';
+  const initialDimension = appMode === 'ticketing' ? 'ticketing' : 'portal';
+  const [activeDimension, setActiveDimension] = useState(initialDimension);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  const ticketingUrl = import.meta.env.VITE_TICKETING_URL;
+  const portalUrl = import.meta.env.VITE_PORTAL_URL;
 
   // Subscribe to Cmd+K / Ctrl+K keyboard shortcut from interactiveFX
   useEffect(() => {
@@ -42,12 +47,27 @@ function HubShell() {
   const handleGlobalNavigate = (targetId) => {
     if (['queue', 'stats', 'departments', 'access', 'roster'].includes(targetId)) {
       if (hasTicketingAccess) {
-        setActiveDimension('ticketing');
+        if (appMode === 'portal' && ticketingUrl) {
+          window.location.href = ticketingUrl;
+        } else {
+          setActiveDimension('ticketing');
+        }
       }
     } else {
-      setActiveDimension('portal');
+      if (appMode === 'ticketing' && portalUrl) {
+        window.location.href = portalUrl;
+      } else {
+        setActiveDimension('portal');
+      }
     }
   };
+
+  const appTitle =
+    appMode === 'ticketing'
+      ? 'Operations Service Desk'
+      : appMode === 'portal'
+      ? 'Employee Portal'
+      : 'Employee Operations Hub';
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden bg-zinc-50 font-sans select-none relative">
@@ -65,8 +85,8 @@ function HubShell() {
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#13264C] to-[#0A152A] text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0 tracking-tight border border-white/20">
             M
           </div>
-          <span className="text-xs sm:text-base font-bold text-zinc-950 tracking-tight truncate max-w-[130px] sm:max-w-none">
-            Employee Operations Hub
+          <span className="text-xs sm:text-base font-bold text-zinc-950 tracking-tight truncate max-w-[140px] sm:max-w-none">
+            {appTitle}
           </span>
         </div>
 
@@ -92,7 +112,13 @@ function HubShell() {
             <button
               type="button"
               data-ripple
-              onClick={() => setActiveDimension('portal')}
+              onClick={() => {
+                if (appMode === 'ticketing' && portalUrl) {
+                  window.location.href = portalUrl;
+                } else {
+                  setActiveDimension('portal');
+                }
+              }}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none whitespace-nowrap ${
                 activeDimension === 'portal'
                   ? 'bg-[#13264C] text-white shadow-xs'
@@ -110,7 +136,11 @@ function HubShell() {
                 data-ripple
                 onClick={() => {
                   if (hasTicketingAccess) {
-                    setActiveDimension('ticketing');
+                    if (appMode === 'portal' && ticketingUrl) {
+                      window.location.href = ticketingUrl;
+                    } else {
+                      setActiveDimension('ticketing');
+                    }
                   }
                 }}
                 disabled={!hasTicketingAccess}

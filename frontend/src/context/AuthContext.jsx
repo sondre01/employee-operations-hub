@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== 'undefined' && window.location.port === '5500'
+    ? 'http://localhost:5000/api'
+    : '/api');
 
 const AuthContext = createContext();
 
@@ -116,8 +120,16 @@ export function AuthProvider({ children }) {
       const matchedPersona = personas.find(p => p.email.toLowerCase() === email.toLowerCase());
       if (matchedPersona && (err.message.includes('fetch') || err.message.includes('NetworkError') || err.message.includes('Failed'))) {
         const parts = (matchedPersona.label || '').replace(/^[^\s]+\s+/, '').split(' ');
+        const deptIdMap = {
+          superadmin: 1,
+          devops: 1,
+          hrmanager: 3,
+          itspecialist: 2,
+          finance: 4,
+          externaldev: null
+        };
         const fallbackUser = {
-          id: matchedPersona.key === 'superadmin' ? 1 : 2,
+          id: matchedPersona.key === 'superadmin' ? 1 : matchedPersona.key === 'devops' ? 2 : matchedPersona.key === 'hrmanager' ? 3 : matchedPersona.key === 'itspecialist' ? 4 : matchedPersona.key === 'finance' ? 5 : 6,
           firstName: parts[0] || 'Team',
           lastName: parts[1] || 'Member',
           middleName: '',
@@ -125,6 +137,7 @@ export function AuthProvider({ children }) {
           workEmail: matchedPersona.email,
           jobTitle: matchedPersona.ticketingRole,
           departmentName: matchedPersona.departmentName,
+          departmentId: deptIdMap[matchedPersona.key] ?? null,
           isInternal: matchedPersona.key !== 'externaldev',
           hasTicketingAccess: matchedPersona.ticketingRole !== 'None',
           ticketingRole: matchedPersona.ticketingRole,

@@ -1,10 +1,12 @@
 // Pure, vanilla fetch wrapper for API communication
-// If running through Vite or Docker reverse proxy, '/api' is used.
-// If running statically via VS Code Live Server on port 5500 without a proxy, it falls back directly to http://localhost:5000/api.
+// 1. If VITE_API_BASE_URL is provided in environment (e.g. on Vercel), use that.
+// 2. If running statically via VS Code Live Server (port 5500), fall back to localhost:5000.
+// 3. Otherwise default to '/api' (used by Vite dev proxy, Docker Nginx proxy, or Vercel rewrites).
 const API_BASE = 
-  (typeof window !== 'undefined' && !import.meta.env.DEV && window.location.port !== '8080')
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== 'undefined' && window.location.port === '5500'
     ? 'http://localhost:5000/api'
-    : '/api';
+    : '/api');
 
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;

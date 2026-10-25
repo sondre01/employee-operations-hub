@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+    using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using EmployeeHub.Api.Data;
 using EmployeeHub.Api.Services.Implementations;
@@ -42,12 +42,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// 4. Configure CORS for Frontend Development (Supports Vite, Docker, and VS Code Go Live on port 5500)
+// 4. Configure CORS (Supports Localhost, Vite, Docker, Vercel, and Cloud Hosting)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin => new Uri(origin).Host is "localhost" or "127.0.0.1")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });

@@ -78,7 +78,13 @@ export default function EmployeePortal({ onOpenCommandPalette }) {
           </span>
         </div>
 
-        <div className="h-full w-full overflow-y-auto overflow-x-hidden p-3.5 sm:p-5 pb-12 flex flex-col gap-4 box-border select-none">
+        <div
+          className={`h-full w-full flex flex-col box-border select-none ${
+            activeTab === 'calendar'
+              ? 'overflow-hidden p-2 sm:p-3 pb-2 gap-2.5 min-h-0'
+              : 'overflow-y-auto overflow-x-hidden p-3.5 sm:p-5 pb-12 gap-4'
+          }`}
+        >
           {activeTab === 'profile' && <ProfileView onNavigateTab={handleSelectTab} />}
           {activeTab === 'attendance' && <AttendanceView onNavigateTab={handleSelectTab} />}
           {activeTab === 'requests' && <TimeRequestsView />}

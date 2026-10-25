@@ -61,9 +61,13 @@ export default function TicketingManagement({ onOpenCommandPalette }) {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 h-full min-w-0 min-h-0 box-border bg-zinc-50/50 p-4 sm:p-6 overflow-y-auto flex flex-col">
+      <main
+        className={`flex-1 h-full min-w-0 min-h-0 box-border bg-zinc-50/50 flex flex-col ${
+          activeTab === 'queue' ? 'p-2 sm:p-3 overflow-hidden' : 'p-4 sm:p-6 overflow-y-auto'
+        }`}
+      >
         {/* Mobile Toggle Bar */}
-        <div className="md:hidden flex items-center justify-between pb-3 mb-2 border-b border-zinc-200/80 shrink-0">
+        <div className="md:hidden flex items-center justify-between pb-2 mb-2 border-b border-zinc-200/80 shrink-0">
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
@@ -77,7 +81,7 @@ export default function TicketingManagement({ onOpenCommandPalette }) {
           </span>
         </div>
 
-        <div className="flex-1 min-h-0 min-w-0">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col">
           {activeTab === 'queue' && <TicketQueueView />}
           {activeTab === 'stats' && <TicketStatsView />}
           {activeTab === 'departments' && isSuperAdmin && <DepartmentManagementView />}
