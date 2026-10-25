@@ -259,19 +259,26 @@ public class TicketService : ITicketService
 
         if (matchedDept == null && !string.IsNullOrWhiteSpace(toEmail))
         {
-            if (toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud"))
+            var alias = string.Empty;
+            if (toEmail.Contains('+'))
+            {
+                var afterPlus = toEmail.Split('+')[1];
+                alias = afterPlus.Split('@')[0].ToLowerInvariant();
+            }
+
+            if (alias == "devops" || alias == "infra" || toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Dev Operation"));
             }
-            else if (toEmail.Contains("it") || toEmail.Contains("hardware") || toEmail.Contains("laptop") || toEmail.Contains("support"))
+            else if (alias == "it" || alias == "tech" || alias == "support" || toEmail.Contains("+it@") || toEmail.StartsWith("it-") || toEmail.Contains("hardware"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("IT Team"));
             }
-            else if (toEmail.Contains("hr") || toEmail.Contains("recruit") || toEmail.Contains("coe") || toEmail.Contains("hmo") || toEmail.Contains("leave"))
+            else if (alias == "hr" || alias == "people" || toEmail.Contains("+hr@") || toEmail.StartsWith("hr-") || toEmail.Contains("recruit"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("HR"));
             }
-            else if (toEmail.Contains("finance") || toEmail.Contains("payroll") || toEmail.Contains("reimburse") || toEmail.Contains("tax"))
+            else if (alias == "finance" || alias == "billing" || toEmail.Contains("+finance@") || toEmail.StartsWith("finance-") || toEmail.Contains("payroll"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Finance"));
             }
