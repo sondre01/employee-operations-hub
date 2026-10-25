@@ -22,6 +22,35 @@ namespace EmployeeHub.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Departments");
+                });
+
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Employee", b =>
                 {
                     b.Property<int>("Id")
@@ -30,6 +59,9 @@ namespace EmployeeHub.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CanAssignEmployees")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ClientName")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
@@ -37,21 +69,49 @@ namespace EmployeeHub.Api.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("EmploymentType")
                         .HasColumnType("integer");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<bool>("HasTicketingAccess")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsInternal")
                         .HasColumnType("boolean");
 
                     b.Property<string>("JobTitle")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("MiddleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("PrimaryTechStack")
                         .IsRequired()
@@ -61,12 +121,17 @@ namespace EmployeeHub.Api.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TicketingRole")
+                        .HasColumnType("integer");
+
                     b.Property<string>("WorkEmail")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("WorkEmail")
                         .IsUnique();
@@ -234,10 +299,18 @@ namespace EmployeeHub.Api.Migrations
                     b.Property<int>("CreatedByEmployeeId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("Queue")
                         .HasColumnType("integer");
@@ -263,7 +336,19 @@ namespace EmployeeHub.Api.Migrations
 
                     b.HasIndex("CreatedByEmployeeId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.ToTable("Tickets");
+                });
+
+            modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Employee", b =>
+                {
+                    b.HasOne("EmployeeHub.Api.Models.Entities.Department", "Department")
+                        .WithMany("Members")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.HardwareCustodyItem", b =>
@@ -309,9 +394,23 @@ namespace EmployeeHub.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("EmployeeHub.Api.Models.Entities.Department", "Department")
+                        .WithMany("Tickets")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("AssignedToEmployee");
 
                     b.Navigation("CreatedByEmployee");
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Department", b =>
+                {
+                    b.Navigation("Members");
+
+                    b.Navigation("Tickets");
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Employee", b =>
