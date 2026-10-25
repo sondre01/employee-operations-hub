@@ -4,8 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && (rm -rf ../assets && cp -r dist/assets ../ && cp dist/index.html ../ || true)",
+    "dev": "node ../scripts/dev.js",
+    "dev:portal": "npm --prefix ../apps/employee-portal run dev",
+    "dev:tickets": "npm --prefix ../apps/ticketing-desk run dev",
+    "build": "npm --prefix ../apps/employee-portal run build && npm --prefix ../apps/ticketing-desk run build",
     "preview": "vite preview"
   },
   "dependencies": {

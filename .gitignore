@@ -6,8 +6,9 @@
 *.userosscache
 *.sln.docstates
 
-# Node & Frontend
+**/node_modules
 **/node_modules/
+node_modules
 **/dist/
 .vite/
 npm-debug.log*

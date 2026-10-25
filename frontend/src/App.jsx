@@ -78,6 +78,15 @@ function HubShell() {
         onNavigate={handleGlobalNavigate}
       />
 
+      {/* Notice Banner about Decoupling */}
+      <div className="bg-[#13264C] text-white px-4 py-1.5 text-xs flex items-center justify-between shrink-0 z-40">
+        <span className="font-semibold">Decoupled into 2 standalone apps: Employee Portal (<a href="http://localhost:5173" className="underline font-bold text-amber-300">Port 5173</a>) and Operations Service Desk (<a href="http://localhost:5174" className="underline font-bold text-amber-300">Port 5174</a>)</span>
+        <div className="flex items-center gap-2">
+          <a href="http://localhost:5173" className="px-2.5 py-0.5 rounded bg-white/20 hover:bg-white/30 text-[11px] font-bold">Open Portal (5173) ↗</a>
+          <a href="http://localhost:5174" className="px-2.5 py-0.5 rounded bg-[#D61766] hover:bg-[#b01353] text-[11px] font-bold">Open Desk (5174) ↗</a>
+        </div>
+      </div>
+
       {/* Consolidated Single Modern Header Bar */}
       <header className="shrink-0 h-13 px-3 sm:px-6 bg-white/95 backdrop-blur-md border-b border-zinc-200/80 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs z-30">
         {/* Left: Brand Identity */}

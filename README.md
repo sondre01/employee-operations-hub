@@ -10,52 +10,48 @@ Built with **ASP.NET Core Web API (.NET 8)**, **Entity Framework Core (SQLite / 
 
 ```text
 proposal-employee-hub/
-├── backend/
-│   ├── src/EmployeeHub.Api/
-│   │   ├── Controllers/             # HTTP routing, DTO bindings, status codes
-│   │   ├── Services/                # Business logic & domain rules
-│   │   ├── Data/                    # AppDbContext, DbInitializer (seed data), Migrations
-│   │   ├── Models/
-│   │   │   ├── Entities/            # EF Core entities (Employee, Department, Hardware, Ticket, Holiday, Policy)
-│   │   │   └── Enums/               # EmploymentType, UserRole, TicketingRole, TicketStatus, CountryLocation
-│   │   └── DTOs/                    # Data Transfer Objects (protects internal DB schema)
-│   └── Dockerfile                   # Multi-stage .NET 8 build
+├── backend/                         # ASP.NET Core API (.NET 8) connected to Supabase PostgreSQL
+│   └── src/EmployeeHub.Api/
 │
-├── frontend/
-│   ├── src/
-│   │   ├── api/                     # Pure fetch API client
-│   │   ├── context/                 # AuthContext (Real Auth & RBAC Persona Switcher)
-│   │   ├── views/                   # Semantic enterprise views
-│   │   │   ├── auth/                # Sign In / Sign Up & 1-Click Role Login
-│   │   │   ├── portal/              # Dimension 1: Employee Portal (Profile, My Tickets)
-│   │   │   └── ticketing/           # Dimension 2: Ticketing System (Queue, Stats, Depts, RBAC Matrix)
-│   │   ├── App.jsx                  # Main view shell & dual dimension navigation
-│   │   └── main.jsx                 # React entry point
-│   ├── nginx.conf                   # Reverse proxy configuration
-│   └── Dockerfile                   # Multi-stage Node + Nginx build
+├── apps/
+│   ├── employee-portal/             # [APP 1] Standalone Employee Portal (Port 5173)
+│   │   ├── src/                     # Profile, Attendance, Leaves, Compliance, Calendar
+│   │   ├── package.json
+│   │   └── vite.config.js
+│   │
+│   └── ticketing-desk/              # [APP 2] Standalone Operations Service Desk (Port 5174)
+│       ├── src/                     # Kanban Ticket Queue, Stats, Department SLAs, RBAC
+│       ├── package.json
+│       └── vite.config.js
 │
-└── docker-compose.yml               # Orchestrates Postgres 16, ASP.NET API, and React Web
+└── package.json                     # Root orchestrator (npm run dev runs both)
 ```
 
 ---
 
 ## 🚀 Quickstart Guide
 
-### Option 1: Run Locally (Fastest Zero-Config)
+### Option 1: Run Locally (Decoupled Frontends + Supabase Backend)
 
 #### 1. Start the ASP.NET Core API
 ```bash
 dotnet run --project backend/src/EmployeeHub.Api --launch-profile http
 ```
-The API starts on `http://localhost:5000` with pre-seeded test personas and departments in SQLite.
+The API starts on `http://localhost:5000` connected to Supabase PostgreSQL.
 
-#### 2. Start the Frontend
-- **Via VS Code Live Server**: Click **"Go Live"** on port `5500`.
-- **Or via Vite Dev Server**:
-  ```bash
-  npm --prefix frontend run dev
-  ```
-  Open `http://localhost:5173`.
+#### 2. Start Both Web Apps (One Command)
+```bash
+npm run dev
+```
+This runs both applications concurrently:
+- **Employee Portal**: [http://localhost:5173](http://localhost:5173)
+- **Operations Service Desk**: [http://localhost:5174](http://localhost:5174)
+
+*Or start them individually:*
+```bash
+npm run dev:portal    # Only Employee Portal (port 5173)
+npm run dev:tickets   # Only Ticketing Desk (port 5174)
+```
 
 ---
 
