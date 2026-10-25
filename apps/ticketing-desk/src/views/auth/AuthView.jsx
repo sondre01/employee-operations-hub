@@ -514,18 +514,25 @@ export default function AuthView() {
                     </div>
 
                     {devCode && (
-                      <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex items-center justify-between text-xs text-amber-900">
-                        <div>
-                          <span className="font-bold">🧪 Dev Simulator:</span>
-                          <span className="font-mono font-black ml-1 text-sm tracking-wider text-amber-950">{devCode}</span>
+                      <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex flex-col gap-1.5 text-xs text-amber-900">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <span>🧪 Local Dev Simulation Code:</span>
+                            <span className="font-mono font-black text-sm tracking-wider text-amber-950 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/80">
+                              {devCode}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setVerificationCode(devCode)}
+                            className="px-2.5 py-1 text-[11px] font-bold bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                          >
+                            Auto-fill Code
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setVerificationCode(devCode)}
-                          className="px-2 py-1 text-[11px] font-bold bg-amber-200/70 hover:bg-amber-300 text-amber-900 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Auto-fill
-                        </button>
+                        <div className="text-[11px] text-amber-800 leading-normal">
+                          Notice: Real Gmail inbox delivery requires a Gmail App Password in your backend settings. In dev mode, your code is provided directly above.
+                        </div>
                       </div>
                     )}
 
