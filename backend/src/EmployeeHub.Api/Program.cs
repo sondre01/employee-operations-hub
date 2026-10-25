@@ -6,13 +6,24 @@ using EmployeeHub.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configure EF Core (Auto-selects SQLite for instant local dev, or PostgreSQL when in Docker/configured)
-var dbProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
-var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
+// 1. Configure EF Core (Auto-supports Supabase, PostgreSQL, or local SQLite)
+var dbProvider = builder.Configuration.GetValue<string>("DatabaseProvider");
+var rawConnection = Environment.GetEnvironmentVariable("SUPABASE_DB_URL")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-if (dbProvider.Equals("PostgreSql", StringComparison.OrdinalIgnoreCase))
+bool isPostgres = (!string.IsNullOrWhiteSpace(dbProvider) && dbProvider.Equals("PostgreSql", StringComparison.OrdinalIgnoreCase))
+    || (!string.IsNullOrWhiteSpace(rawConnection) && (
+        rawConnection.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        rawConnection.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) ||
+        rawConnection.Contains("supabase.co", StringComparison.OrdinalIgnoreCase) ||
+        rawConnection.Contains("supabase.com", StringComparison.OrdinalIgnoreCase) ||
+        rawConnection.Contains("Host=", StringComparison.OrdinalIgnoreCase)
+    ));
+
+if (isPostgres)
 {
-    var connectionString = postgresConn ?? "Host=localhost;Port=5432;Database=employee_hub;Username=postgres;Password=postgres";
+    var connectionString = ParsePostgreSqlConnectionString(rawConnection ?? "Host=localhost;Port=5432;Database=employee_hub;Username=postgres;Password=postgres");
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
 }
@@ -101,3 +112,31 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string ParsePostgreSqlConnectionString(string raw)
+{
+    if (string.IsNullOrWhiteSpace(raw)) return raw;
+    if (!raw.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+        !raw.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        return raw;
+    }
+
+    try
+    {
+        var uri = new Uri(raw);
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "postgres";
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+        if (string.IsNullOrEmpty(database)) database = "postgres";
+
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;Pooling=true;";
+    }
+    catch
+    {
+        return raw;
+    }
+}
