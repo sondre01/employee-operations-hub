@@ -25,7 +25,10 @@ if (isPostgres)
 {
     var connectionString = ParsePostgreSqlConnectionString(rawConnection ?? "Host=localhost;Port=5432;Database=employee_hub;Username=postgres;Password=postgres");
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connectionString));
+        options.UseNpgsql(connectionString, npgsql =>
+        {
+            npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "employee_hub");
+        }));
 }
 else
 {

@@ -12,8 +12,53 @@ public static class DbInitializer
         // Apply migrations for PostgreSQL or EnsureCreated for local SQLite/Supabase
         if (context.Database.IsNpgsql())
         {
+            var moveSchemaSql = @"
+DO $$
+BEGIN
+    CREATE SCHEMA IF NOT EXISTS employee_hub;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'Departments') THEN
+        ALTER TABLE public.""Departments"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'Employees') THEN
+        ALTER TABLE public.""Employees"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'HardwareItems') THEN
+        ALTER TABLE public.""HardwareItems"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'Tickets') THEN
+        ALTER TABLE public.""Tickets"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'Holidays') THEN
+        ALTER TABLE public.""Holidays"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'PolicyDocuments') THEN
+        ALTER TABLE public.""PolicyDocuments"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'PolicyAcknowledgements') THEN
+        ALTER TABLE public.""PolicyAcknowledgements"" SET SCHEMA employee_hub;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '__EFMigrationsHistory') THEN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'employee_hub' AND table_name = '__EFMigrationsHistory') THEN
+            ALTER TABLE public.""__EFMigrationsHistory"" SET SCHEMA employee_hub;
+        ELSE
+            INSERT INTO employee_hub.""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+            SELECT ""MigrationId"", ""ProductVersion"" FROM public.""__EFMigrationsHistory""
+            ON CONFLICT (""MigrationId"") DO NOTHING;
+            DROP TABLE public.""__EFMigrationsHistory"";
+        END IF;
+    END IF;
+END $$;";
             try
             {
+                await context.Database.ExecuteSqlRawAsync(moveSchemaSql);
                 await context.Database.MigrateAsync();
             }
             catch

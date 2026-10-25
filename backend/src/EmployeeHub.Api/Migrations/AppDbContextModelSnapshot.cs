@@ -48,7 +48,7 @@ namespace EmployeeHub.Api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Employee", b =>
@@ -136,7 +136,7 @@ namespace EmployeeHub.Api.Migrations
                     b.HasIndex("WorkEmail")
                         .IsUnique();
 
-                    b.ToTable("Employees");
+                    b.ToTable("Employees", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.HardwareCustodyItem", b =>
@@ -186,7 +186,7 @@ namespace EmployeeHub.Api.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("HardwareItems");
+                    b.ToTable("HardwareItems", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Holiday", b =>
@@ -219,7 +219,7 @@ namespace EmployeeHub.Api.Migrations
 
                     b.HasIndex("HolidayDate", "Country");
 
-                    b.ToTable("Holidays");
+                    b.ToTable("Holidays", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.PolicyAcknowledgement", b =>
@@ -246,7 +246,7 @@ namespace EmployeeHub.Api.Migrations
                     b.HasIndex("PolicyDocumentId", "EmployeeId")
                         .IsUnique();
 
-                    b.ToTable("PolicyAcknowledgements");
+                    b.ToTable("PolicyAcknowledgements", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.PolicyDocument", b =>
@@ -279,7 +279,7 @@ namespace EmployeeHub.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PolicyDocuments");
+                    b.ToTable("PolicyDocuments", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Ticket", b =>
@@ -338,7 +338,7 @@ namespace EmployeeHub.Api.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.ToTable("Tickets");
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("EmployeeHub.Api.Models.Entities.Employee", b =>

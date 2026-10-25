@@ -21,6 +21,11 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.HasDefaultSchema("employee_hub");
+        }
+
         // Department configurations
         modelBuilder.Entity<Department>(entity =>
         {
