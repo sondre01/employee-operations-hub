@@ -133,43 +133,39 @@ public class EmailService : IEmailService
     {
         var (host, port, user, pass, from) = GetSmtpConfig();
 
-        if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(pass))
+        if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(pass))
         {
-            try
-            {
-                using var client = new SmtpClient(host, port)
-                {
-                    Credentials = new NetworkCredential(user, pass),
-                    EnableSsl = true,
-                    Timeout = 10000
-                };
-
-                using var mail = new MailMessage
-                {
-                    From = new MailAddress(from, "Employee Operations Hub"),
-                    Subject = subject,
-                    Body = bodyHtml,
-                    IsBodyHtml = true
-                };
-
-                mail.To.Add(toEmail);
-
-                await client.SendMailAsync(mail);
-                _logger.LogInformation("Email sent successfully via Gmail SMTP to: {Email}", toEmail);
-                return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to send email via SMTP to {Email}. Falling back to simulation log.", toEmail);
-            }
+            throw new InvalidOperationException(
+                "Gmail SMTP credentials are not configured. Please provide your sender Gmail and 16-character Google App Password in appsettings.json or environment variables."
+            );
         }
 
-        // Dev / Simulation Mode Fallback (Always functional for local testing without Gmail credentials)
-        Console.WriteLine("\n\x1b[1m\x1b[36m=============================================================\x1b[0m");
-        Console.WriteLine("\x1b[1m\x1b[32m[GMAIL NOTIFICATION DISPATCH]\x1b[0m");
-        Console.WriteLine("To:       \x1b[1m\x1b[33m{0}\x1b[0m", toEmail);
-        Console.WriteLine("Subject:  \x1b[1m{0}\x1b[0m", subject);
-        Console.WriteLine("Status:   \x1b[32mDispatched (Dev Simulation Mode / Ready for Live SMTP)\x1b[0m");
-        Console.WriteLine("\x1b[1m\x1b[36m=============================================================\x1b[0m\n");
+        try
+        {
+            using var client = new SmtpClient(host, port)
+            {
+                Credentials = new NetworkCredential(user, pass),
+                EnableSsl = true,
+                Timeout = 15000
+            };
+
+            using var mail = new MailMessage
+            {
+                From = new MailAddress(from, "Employee Operations Hub"),
+                Subject = subject,
+                Body = bodyHtml,
+                IsBodyHtml = true
+            };
+
+            mail.To.Add(toEmail);
+
+            await client.SendMailAsync(mail);
+            _logger.LogInformation("Email dispatched successfully via Gmail SMTP to: {Email}", toEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email via Gmail SMTP to {Email}", toEmail);
+            throw new InvalidOperationException($"Gmail delivery failed: {ex.Message}. Please verify your Gmail address and 16-character App Password.");
+        }
     }
 }

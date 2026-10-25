@@ -13,8 +13,7 @@ public record SendVerificationCodeRequestDto(
 
 public record SendVerificationCodeResponseDto(
     bool Success,
-    string Message,
-    string? DevCode = null
+    string Message
 );
 
 public record RegisterRequestDto(

@@ -46,8 +46,7 @@ public class AuthService : IAuthService
 
         return new SendVerificationCodeResponseDto(
             true,
-            $"A 6-digit verification code has been dispatched to {email}. Please check your inbox or spam folder.",
-            _verificationService.GetLastCodeForDev(normalizedEmail)
+            $"A 6-digit verification code has been dispatched to {email}. Please check your inbox or spam folder."
         );
     }
 
@@ -70,22 +69,15 @@ public class AuthService : IAuthService
     {
         var email = dto.WorkEmail.Trim().ToLowerInvariant();
 
-        if (!string.IsNullOrWhiteSpace(dto.VerificationCode))
+        if (string.IsNullOrWhiteSpace(dto.VerificationCode))
         {
-            var isCodeValid = _verificationService.VerifyCode(email, dto.VerificationCode);
-            if (!isCodeValid)
-            {
-                throw new ArgumentException("Invalid or expired 6-digit verification code. Please request a new code.");
-            }
+            throw new ArgumentException("Verification code is required. Please check your Gmail for the 6-digit code.");
         }
-        else
+
+        var isCodeValid = _verificationService.VerifyCode(email, dto.VerificationCode);
+        if (!isCodeValid)
         {
-            // If verification code is completely omitted
-            var devCode = _verificationService.GetLastCodeForDev(email);
-            if (devCode != null)
-            {
-                throw new ArgumentException("Please enter the 6-digit verification code sent to your Gmail.");
-            }
+            throw new ArgumentException("Invalid or expired 6-digit verification code. Please request a new code.");
         }
 
         var exists = await _context.Employees.AnyAsync(e => e.WorkEmail.ToLower() == email);

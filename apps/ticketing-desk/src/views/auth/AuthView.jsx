@@ -35,7 +35,6 @@ export default function AuthView() {
   // Sign up form state
   const [signupStep, setSignupStep] = useState(1); // 1 = Details, 2 = 6-digit OTP Code
   const [verificationCode, setVerificationCode] = useState('');
-  const [devCode, setDevCode] = useState(null);
   const [signupForm, setSignupForm] = useState({
     lastName: '',
     firstName: '',
@@ -100,7 +99,6 @@ export default function AuthView() {
     setLoading(true);
     try {
       const res = await sendVerificationCode(email);
-      setDevCode(res?.devCode || null);
       setSuccessMsg(res?.message || 'Verification code sent to your Gmail inbox!');
       setSignupStep(2);
     } catch (err) {
@@ -512,29 +510,6 @@ export default function AuthView() {
                         Please check your Gmail inbox or spam folder for the 6-digit confirmation code.
                       </div>
                     </div>
-
-                    {devCode && (
-                      <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex flex-col gap-1.5 text-xs text-amber-900">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 font-bold">
-                            <span>🧪 Local Dev Simulation Code:</span>
-                            <span className="font-mono font-black text-sm tracking-wider text-amber-950 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/80">
-                              {devCode}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setVerificationCode(devCode)}
-                            className="px-2.5 py-1 text-[11px] font-bold bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg transition-colors cursor-pointer shadow-2xs"
-                          >
-                            Auto-fill Code
-                          </button>
-                        </div>
-                        <div className="text-[11px] text-amber-800 leading-normal">
-                          Notice: Real Gmail inbox delivery requires a Gmail App Password in your backend settings. In dev mode, your code is provided directly above.
-                        </div>
-                      </div>
-                    )}
 
                     <div>
                       <label className="block text-xs font-bold text-zinc-700 mb-1.5 text-center">
