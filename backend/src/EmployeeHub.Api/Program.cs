@@ -48,6 +48,8 @@ builder.Services.AddScoped<IHardwareService, HardwareService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<IPolicyService, PolicyService>();
+builder.Services.AddSingleton<IGmailInboundEmailService, GmailInboundEmailService>();
+builder.Services.AddHostedService(sp => (GmailInboundEmailService)sp.GetRequiredService<IGmailInboundEmailService>());
 
 // 3. Add Controllers with String Enum JSON Serializer
 builder.Services.AddControllers()

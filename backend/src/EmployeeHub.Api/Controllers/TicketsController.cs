@@ -10,10 +10,12 @@ namespace EmployeeHub.Api.Controllers;
 public class TicketsController : ControllerBase
 {
     private readonly ITicketService _ticketService;
+    private readonly IGmailInboundEmailService _gmailInboundService;
 
-    public TicketsController(ITicketService ticketService)
+    public TicketsController(ITicketService ticketService, IGmailInboundEmailService gmailInboundService)
     {
         _ticketService = ticketService;
+        _gmailInboundService = gmailInboundService;
     }
 
     [HttpGet]
@@ -22,9 +24,10 @@ public class TicketsController : ControllerBase
         [FromQuery] TicketStatus? status,
         [FromQuery] int? createdByEmployeeId,
         [FromQuery] int? departmentId,
-        [FromQuery] int? assignedToEmployeeId)
+        [FromQuery] int? assignedToEmployeeId,
+        [FromQuery] int? callerEmployeeId)
     {
-        var result = await _ticketService.GetTicketsAsync(queue, status, createdByEmployeeId, departmentId, assignedToEmployeeId);
+        var result = await _ticketService.GetTicketsAsync(queue, status, createdByEmployeeId, departmentId, assignedToEmployeeId, callerEmployeeId);
         return Ok(result);
     }
 
@@ -102,5 +105,12 @@ public class TicketsController : ControllerBase
             return BadRequest(result);
         }
         return Ok(result);
+    }
+
+    [HttpPost("sync-inbox")]
+    public async Task<ActionResult> SyncInbox()
+    {
+        var count = await _gmailInboundService.SyncInboxAsync();
+        return Ok(new { success = true, ingestedCount = count, message = $"Synced Gmail inbox. Ingested {count} new tickets." });
     }
 }

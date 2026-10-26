@@ -92,12 +92,12 @@ END $$;";
             var existingDepts = await context.Departments.ToListAsync();
             foreach (var d in existingDepts)
             {
-                if (string.IsNullOrWhiteSpace(d.SupportEmail))
+                if (string.IsNullOrWhiteSpace(d.SupportEmail) || !d.SupportEmail.Contains("desk-"))
                 {
-                    if (d.Name.Contains("Dev Operation")) d.SupportEmail = "gamboa.khinandrei+devops@gmail.com";
-                    else if (d.Name.Contains("IT Team")) d.SupportEmail = "it-support@company.io";
-                    else if (d.Name.Contains("HR")) d.SupportEmail = "hr-support@company.io";
-                    else if (d.Name.Contains("Finance")) d.SupportEmail = "finance-support@company.io";
+                    if (d.Name.Contains("Dev Operation")) d.SupportEmail = "gamboa.khinandrei+desk-devops@gmail.com";
+                    else if (d.Name.Contains("IT Team")) d.SupportEmail = "gamboa.khinandrei+desk-it@gmail.com";
+                    else if (d.Name.Contains("HR")) d.SupportEmail = "gamboa.khinandrei+desk-hr@gmail.com";
+                    else if (d.Name.Contains("Finance")) d.SupportEmail = "gamboa.khinandrei+desk-finance@gmail.com";
                     else d.SupportEmail = $"{d.Name.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")}@company.io";
                 }
             }
@@ -114,7 +114,7 @@ END $$;";
         {
             Name = "Dev Operation",
             Description = "DevOps engineering, Kubernetes cluster management, CI/CD pipelines, and cloud infrastructure.",
-            SupportEmail = "gamboa.khinandrei+devops@gmail.com",
+            SupportEmail = "gamboa.khinandrei+desk-devops@gmail.com",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
@@ -122,7 +122,7 @@ END $$;";
         {
             Name = "IT Team",
             Description = "Workstation hardware custody, developer laptop provisioning, WireGuard VPN, and office network equipment.",
-            SupportEmail = "it-support@company.io",
+            SupportEmail = "gamboa.khinandrei+desk-it@gmail.com",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
@@ -130,7 +130,7 @@ END $$;";
         {
             Name = "HR/Recruitment",
             Description = "People operations, Certificate of Employment (COE), HMO enrollment, statutory benefits (SSS/PhilHealth/Pag-IBIG), and leaves.",
-            SupportEmail = "hr-support@company.io",
+            SupportEmail = "gamboa.khinandrei+desk-hr@gmail.com",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
@@ -138,7 +138,7 @@ END $$;";
         {
             Name = "Finance",
             Description = "Payroll, statutory remittance compliance, client billing, equipment purchase reimbursements, and tax document processing.",
-            SupportEmail = "finance-support@company.io",
+            SupportEmail = "gamboa.khinandrei+desk-finance@gmail.com",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 

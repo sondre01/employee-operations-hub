@@ -87,8 +87,9 @@ export default function TicketQueueView() {
     setError(null);
     try {
       // Fetch tickets, access employees, and departments
+      const callerParam = currentUser?.id ? `?callerEmployeeId=${currentUser.id}` : '';
       const [ticketList, accessEmpList, deptList] = await Promise.all([
-        apiRequest('/tickets'),
+        apiRequest(`/tickets${callerParam}`),
         apiRequest('/access/employees').catch(() => apiRequest('/employees')),
         apiRequest('/departments').catch(() => []),
       ]);
@@ -168,7 +169,13 @@ export default function TicketQueueView() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (currentUser?.departmentId) {
+      setSelectedDeptFilter(currentUser.departmentId.toString());
+    }
+  }, [currentUser?.departmentId]);
 
   // Determine which column a ticket belongs to
   const getTicketColumn = (ticket) => {

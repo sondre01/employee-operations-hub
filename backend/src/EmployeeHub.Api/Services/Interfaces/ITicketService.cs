@@ -10,7 +10,8 @@ public interface ITicketService
         TicketStatus? status = null,
         int? createdByEmployeeId = null,
         int? departmentId = null,
-        int? assignedToEmployeeId = null
+        int? assignedToEmployeeId = null,
+        int? callerEmployeeId = null
     );
 
     Task<TicketDto?> GetTicketByIdAsync(int id);

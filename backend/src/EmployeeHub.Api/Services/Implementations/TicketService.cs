@@ -23,13 +23,38 @@ public class TicketService : ITicketService
         TicketStatus? status = null,
         int? createdByEmployeeId = null,
         int? departmentId = null,
-        int? assignedToEmployeeId = null)
+        int? assignedToEmployeeId = null,
+        int? callerEmployeeId = null)
     {
         var query = _context.Tickets
             .Include(t => t.CreatedByEmployee)
             .Include(t => t.AssignedToEmployee)
             .Include(t => t.Department)
             .AsNoTracking();
+
+        // Enforce Department-Level Isolation for Callers
+        if (callerEmployeeId.HasValue)
+        {
+            var caller = await _context.Employees.FindAsync(callerEmployeeId.Value);
+            if (caller != null)
+            {
+                bool isSuperAdmin = caller.WorkEmail.Trim().Equals("gamboa.khinandrei@gmail.com", StringComparison.OrdinalIgnoreCase) ||
+                                    caller.TicketingRole == TicketingRole.SuperAdmin;
+
+                if (!isSuperAdmin)
+                {
+                    // Regular team members and department managers ONLY receive / view their department's tickets
+                    if (caller.DepartmentId.HasValue)
+                    {
+                        query = query.Where(t => t.DepartmentId == caller.DepartmentId.Value);
+                    }
+                    else
+                    {
+                        query = query.Where(t => t.CreatedByEmployeeId == caller.Id || t.AssignedToEmployeeId == caller.Id);
+                    }
+                }
+            }
+        }
 
         if (queue.HasValue)
         {
@@ -266,43 +291,55 @@ public class TicketService : ITicketService
         var fromEmail = dto.FromEmail.Trim().ToLowerInvariant();
         var toEmail = dto.ToEmail?.Trim().ToLowerInvariant() ?? string.Empty;
 
-        // 1. Resolve Department by SupportEmail or designated email alias
+        // USER SPECIFICATION: Filter out emails sent directly to personal address gamboa.khinandrei@gmail.com
+        if (toEmail == "gamboa.khinandrei@gmail.com" || toEmail == "<gamboa.khinandrei@gmail.com>")
+        {
+            return new InboundEmailResultDto(false, "Filtered out: Email was sent directly to personal address gamboa.khinandrei@gmail.com rather than a designated department desk email.");
+        }
+
+        // 1. Resolve Department strictly by designated department email
         var departments = await _context.Departments.ToListAsync();
-        var matchedDept = departments.FirstOrDefault(d => 
-            !string.IsNullOrWhiteSpace(d.SupportEmail) && d.SupportEmail.ToLowerInvariant() == toEmail);
+        Department? matchedDept = null;
+
+        // Check if toEmail matches department SupportEmail directly
+        matchedDept = departments.FirstOrDefault(d => 
+            !string.IsNullOrWhiteSpace(d.SupportEmail) && 
+            (d.SupportEmail.Trim().Equals(toEmail, StringComparison.OrdinalIgnoreCase) ||
+             toEmail.Contains(d.SupportEmail.Trim().ToLowerInvariant())));
 
         if (matchedDept == null && !string.IsNullOrWhiteSpace(toEmail))
         {
-            var alias = string.Empty;
-            var localPart = toEmail.Contains('@') ? toEmail.Split('@')[0] : toEmail;
-            if (localPart.Contains('_'))
-            {
-                alias = localPart.Split('_')[^1].ToLowerInvariant();
-            }
-            else if (localPart.Contains('+'))
-            {
-                alias = localPart.Split('+')[^1].ToLowerInvariant();
-            }
-
-            if (alias == "devops" || alias == "infra" || toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud") || toEmail.Contains("gamboa.khinandrei"))
+            // Dev Operation: gamboa.khinandrei+desk-devops@gmail.com, gamboa.khinandrei+devops@gmail.com, devops@..., infra@...
+            if (toEmail.Contains("desk-devops") || toEmail.Contains("+devops") || toEmail.Contains("_devops") ||
+                toEmail.StartsWith("devops@") || toEmail.StartsWith("infra@"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Dev Operation"));
             }
-            else if (alias == "it" || alias == "tech" || alias == "support" || toEmail.Contains("_it@") || toEmail.Contains("+it@") || toEmail.StartsWith("it-") || toEmail.Contains("hardware"))
+            // IT Team: gamboa.khinandrei+desk-it@gmail.com, gamboa.khinandrei+it@gmail.com, it-support@..., it@...
+            else if (toEmail.Contains("desk-it") || toEmail.Contains("+it@") || toEmail.Contains("+it-") || toEmail.Contains("_it@") ||
+                     toEmail.StartsWith("it-") || toEmail.StartsWith("it@") || toEmail.Contains("tech-support") || toEmail.Contains("hardware"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("IT Team"));
             }
-            else if (alias == "hr" || alias == "people" || toEmail.Contains("_hr@") || toEmail.Contains("+hr@") || toEmail.StartsWith("hr-") || toEmail.Contains("recruit"))
+            // HR / Recruitment: gamboa.khinandrei+desk-hr@gmail.com, gamboa.khinandrei+hr@gmail.com, hr-support@..., hr@...
+            else if (toEmail.Contains("desk-hr") || toEmail.Contains("+hr@") || toEmail.Contains("+hr-") || toEmail.Contains("_hr@") ||
+                     toEmail.StartsWith("hr-") || toEmail.StartsWith("hr@") || toEmail.Contains("recruit"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("HR"));
             }
-            else if (alias == "finance" || alias == "billing" || toEmail.Contains("_finance@") || toEmail.Contains("+finance@") || toEmail.StartsWith("finance-") || toEmail.Contains("payroll"))
+            // Finance: gamboa.khinandrei+desk-finance@gmail.com, gamboa.khinandrei+finance@gmail.com, finance-support@...
+            else if (toEmail.Contains("desk-finance") || toEmail.Contains("+finance@") || toEmail.Contains("+finance-") || toEmail.Contains("_finance@") ||
+                     toEmail.StartsWith("finance-") || toEmail.StartsWith("finance@") || toEmail.Contains("payroll") || toEmail.Contains("billing"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Finance"));
             }
         }
 
-        matchedDept ??= departments.FirstOrDefault() ?? new Department { Name = "General Support" };
+        // STRICT FILTER: If it does not match ANY designated department email, reject it!
+        if (matchedDept == null)
+        {
+            return new InboundEmailResultDto(false, $"Filtered out: Destination email '{toEmail}' does not match any designated department support email.");
+        }
 
         // 2. Find or register sender Employee
         var employee = await _context.Employees.FirstOrDefaultAsync(e => e.WorkEmail.ToLower() == fromEmail);
@@ -334,7 +371,7 @@ public class TicketService : ITicketService
             ? TicketQueue.HrLegal
             : TicketQueue.ItInfrastructure;
 
-        // 4. Create Ticket
+        // 4. Create Ticket strictly belonging to this department
         var priority = !string.IsNullOrWhiteSpace(dto.Priority) ? dto.Priority.Trim() : "Medium";
         var ticket = new Ticket
         {
@@ -368,6 +405,49 @@ public class TicketService : ITicketService
         catch
         {
             // Non-blocking confirmation
+        }
+
+        // 6. Notify ALL active members and managers of this specific department via email
+        try
+        {
+            var deptMembers = await _context.Employees
+                .Where(e => e.DepartmentId == matchedDept.Id && e.IsActive && !string.IsNullOrWhiteSpace(e.WorkEmail))
+                .ToListAsync();
+
+            foreach (var staff in deptMembers)
+            {
+                var isMgr = staff.TicketingRole == TicketingRole.DepartmentManager || 
+                            (staff.JobTitle != null && staff.JobTitle.ToLower().Contains("manager"));
+                var roleLabel = isMgr ? "Department Manager" : "Team Member";
+
+                await _emailService.SendNotificationAsync(
+                    staff.WorkEmail,
+                    $"[New {matchedDept.Name} Ticket #{ticket.Id}] {ticket.Title}",
+                    $@"<div style='font-family: Arial, sans-serif; color: #1e293b; max-width: 600px;'>
+                        <div style='background: #13264C; padding: 16px; border-radius: 8px 8px 0 0; color: white;'>
+                            <h2 style='margin:0; font-size: 18px;'>New Inbound Department Ticket #{ticket.Id}</h2>
+                            <p style='margin:4px 0 0; font-size: 12px; opacity: 0.9;'>Designated Desk: {matchedDept.Name} ({toEmail})</p>
+                        </div>
+                        <div style='border: 1px solid #e2e8f0; border-top: none; padding: 20px; border-radius: 0 0 8px 8px;'>
+                            <p>Hello <strong>{staff.FullName}</strong> ({roleLabel}),</p>
+                            <p>A new support request has been received by your department's designated email address (<code>{toEmail}</code>).</p>
+                            <table style='width: 100%; border-collapse: collapse; font-size: 13px; margin: 15px 0;'>
+                                <tr><td style='padding: 6px 0; color: #64748b; width: 120px;'><strong>Requester:</strong></td><td>{employee.FullName} &lt;{employee.WorkEmail}&gt;</td></tr>
+                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Department:</strong></td><td>{matchedDept.Name}</td></tr>
+                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Designated Inbox:</strong></td><td><code>{toEmail}</code></td></tr>
+                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Priority:</strong></td><td>{ticket.Priority}</td></tr>
+                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Subject:</strong></td><td><strong>{ticket.Title}</strong></td></tr>
+                            </table>
+                            <div style='background: #f8fafc; border-left: 4px solid #13264C; padding: 12px 16px; font-size: 13px; margin: 15px 0; white-space: pre-wrap;'>{System.Net.WebUtility.HtmlEncode(ticket.Description)}</div>
+                            <p style='font-size: 12px; color: #64748b;'>Please log in to the Employee Hub Ticketing Desk to view or assign this ticket.</p>
+                        </div>
+                    </div>"
+                );
+            }
+        }
+        catch
+        {
+            // Non-blocking notification dispatch
         }
 
         return new InboundEmailResultDto(
