@@ -6,10 +6,70 @@ const API_BASE =
     ? 'http://localhost:5000/api'
     : '/api');
 
+export function encodeSsoSession(user) {
+  if (!user) return '';
+  try {
+    const json = JSON.stringify(user);
+    const utf8Bytes = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (match, p1) =>
+      String.fromCharCode(parseInt(p1, 16))
+    );
+    return encodeURIComponent(btoa(utf8Bytes));
+  } catch (err) {
+    console.error('Failed to encode SSO session:', err);
+    return '';
+  }
+}
+
+export function decodeSsoSession(token) {
+  if (!token) return null;
+  try {
+    const base64 = decodeURIComponent(token);
+    const binary = atob(base64);
+    const json = decodeURIComponent(
+      Array.prototype.map.call(binary, (ch) => '%' + ('00' + ch.charCodeAt(0).toString(16)).slice(-2)).join('')
+    );
+    return JSON.parse(json);
+  } catch (err) {
+    console.error('Failed to decode SSO session:', err);
+    return null;
+  }
+}
+
+export function getCrossAppUrl(baseUrl, user) {
+  if (!baseUrl) return '#';
+  if (!user) return baseUrl;
+  const token = encodeSsoSession(user);
+  if (!token) return baseUrl;
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${separator}sso_session=${token}`;
+}
+
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
+    // 1. Check for incoming SSO session from partner app
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ssoToken = urlParams.get('sso_session');
+        if (ssoToken) {
+          const ssoUser = decodeSsoSession(ssoToken);
+          if (ssoUser && (ssoUser.id || ssoUser.workEmail)) {
+            localStorage.setItem('ops_hub_user', JSON.stringify(ssoUser));
+            urlParams.delete('sso_session');
+            const newSearch = urlParams.toString();
+            const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+            return ssoUser;
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing SSO session parameter:', e);
+      }
+    }
+
+    // 2. Load existing session from local storage
     try {
       const saved = localStorage.getItem('ops_hub_user');
       return saved ? JSON.parse(saved) : null;
@@ -266,7 +326,8 @@ export function AuthProvider({ children }) {
         isDevOpsAdmin,
         isDepartmentManager,
         hasTicketingAccess,
-        canAssignEmployees
+        canAssignEmployees,
+        getCrossAppUrl: (targetBaseUrl) => getCrossAppUrl(targetBaseUrl, currentUser)
       }}
     >
       {children}

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 function TicketingShell() {
-  const { currentUser, hasTicketingAccess, isSuperAdmin, logout } = useAuth();
+  const { currentUser, hasTicketingAccess, isSuperAdmin, logout, getCrossAppUrl } = useAuth();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Link to the separate Employee Portal (port 5173 locally or Vercel URL in prod)
@@ -32,7 +32,7 @@ function TicketingShell() {
 
   const handleGlobalNavigate = (targetId) => {
     if (!['queue', 'stats', 'departments', 'access', 'roster'].includes(targetId)) {
-      window.location.href = portalUrl;
+      window.location.href = getCrossAppUrl(portalUrl);
     }
   };
 
@@ -81,11 +81,9 @@ function TicketingShell() {
 
           {/* External Link back to Employee Portal */}
           <a
-            href={portalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={getCrossAppUrl(portalUrl)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-[#13264C] text-zinc-700 hover:text-white border border-zinc-200/80 text-xs font-bold transition-all shadow-2xs cursor-pointer group"
-            title="Open Employee Portal in separate website"
+            title="Open Employee Portal with your active session"
           >
             <User className="w-3.5 h-3.5 text-[#13264C] group-hover:text-white transition-colors" />
             <span>Employee Portal</span>
@@ -129,7 +127,7 @@ function TicketingShell() {
               </div>
               <h3 className="text-base font-bold text-zinc-950 mb-1">Service Desk Access Required</h3>
               <p className="text-xs text-zinc-600 mb-4 leading-relaxed">
-                You do not currently have operational desk access to the Ticketing System Management.
+                You do not currently have operational desk access to the Ticketing System Management. Newly registered accounts start in the Employee Portal until desk permissions are delegated.
               </p>
               <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-[11px] text-zinc-600 text-left mb-4">
                 <div>Department: <strong className="text-zinc-900">{currentUser.departmentName || 'No Department'}</strong></div>
@@ -137,10 +135,10 @@ function TicketingShell() {
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                 <a
-                  href={portalUrl}
+                  href={getCrossAppUrl(portalUrl)}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#13264C] text-white text-xs font-bold shadow-2xs hover:bg-[#0E1D3B] transition-all cursor-pointer"
                 >
-                  Return to Employee Portal
+                  Go to Employee Portal (Seamless Sign In)
                 </a>
                 <button
                   type="button"

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function AuthView() {
-  const { login, register, quickLogin, quickPersonas, sendVerificationCode } = useAuth();
+  const { login, register, quickLogin, quickPersonas, sendVerificationCode, getCrossAppUrl } = useAuth();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -126,7 +126,18 @@ export default function AuthView() {
         fullName: [signupForm.firstName, signupForm.middleName, signupForm.lastName].filter(Boolean).join(' '),
         verificationCode: code
       };
-      await register(payload);
+      const user = await register(payload);
+      const isSuper = Boolean(user?.isSuperAdmin || user?.ticketingRole === 'SuperAdmin' || user?.workEmail?.toLowerCase() === 'gamboa.khinandrei@gmail.com');
+      const hasDesk = Boolean(user?.hasTicketingAccess || (user?.isInternal && user?.ticketingRole && user?.ticketingRole !== 'None'));
+
+      if (!isSuper && !hasDesk) {
+        const portalUrl = import.meta.env.VITE_PORTAL_URL || 'http://localhost:5173';
+        const crossUrl = getCrossAppUrl ? getCrossAppUrl(portalUrl) : portalUrl;
+        setSuccessMsg('Account registered successfully! Transitioning your active session to Employee Portal...');
+        setTimeout(() => {
+          window.location.href = crossUrl;
+        }, 1200);
+      }
     } catch (err) {
       setError(err.message);
     } finally {

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 function PortalShell() {
-  const { currentUser, hasTicketingAccess, isSuperAdmin, logout } = useAuth();
+  const { currentUser, hasTicketingAccess, isSuperAdmin, logout, getCrossAppUrl } = useAuth();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Link to the separate Ticketing Desk (port 5174 locally or Vercel URL in prod)
@@ -31,7 +31,7 @@ function PortalShell() {
 
   const handleGlobalNavigate = (targetId) => {
     if (['queue', 'stats', 'departments', 'access', 'roster'].includes(targetId)) {
-      window.location.href = ticketingUrl;
+      window.location.href = getCrossAppUrl(ticketingUrl);
     }
   };
 
@@ -81,11 +81,9 @@ function PortalShell() {
           {/* External Link to Dedicated Ticketing Desk */}
           {canAccessDesk && (
             <a
-              href={ticketingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={getCrossAppUrl(ticketingUrl)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-[#13264C] text-zinc-700 hover:text-white border border-zinc-200/80 text-xs font-bold transition-all shadow-2xs cursor-pointer group"
-              title="Open Operations Service Desk in separate website"
+              title="Open Operations Service Desk with your active session"
             >
               <Ticket className="w-3.5 h-3.5 text-[#13264C] group-hover:text-white transition-colors" />
               <span>Service Desk</span>
