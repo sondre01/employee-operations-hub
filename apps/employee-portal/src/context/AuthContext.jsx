@@ -22,9 +22,34 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
-  // Fetch personas for quick 1-click test login
+  // Fetch personas for quick 1-click test login & sync latest permissions
   useEffect(() => {
     fetchPersonas();
+    if (currentUser?.id) {
+      fetch(`${API_BASE}/access/employees`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((list) => {
+          if (Array.isArray(list)) {
+            const fresh = list.find((e) => e.id === currentUser.id);
+            if (fresh) {
+              setCurrentUser((prev) => {
+                const updated = {
+                  ...prev,
+                  isInternal: fresh.isInternal,
+                  departmentId: fresh.departmentId,
+                  departmentName: fresh.departmentName,
+                  ticketingRole: fresh.ticketingRole,
+                  hasTicketingAccess: fresh.hasTicketingAccess,
+                  canAssignEmployees: fresh.canAssignEmployees
+                };
+                localStorage.setItem('ops_hub_user', JSON.stringify(updated));
+                return updated;
+              });
+            }
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const fetchPersonas = async () => {

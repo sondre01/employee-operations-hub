@@ -8,11 +8,12 @@ import {
   ExternalLink,
   Search,
   Command,
-  Ticket
+  Ticket,
+  LogOut
 } from 'lucide-react';
 
 function PortalShell() {
-  const { currentUser, hasTicketingAccess } = useAuth();
+  const { currentUser, hasTicketingAccess, isSuperAdmin, logout } = useAuth();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Link to the separate Ticketing Desk (port 5174 locally or Vercel URL in prod)
@@ -33,6 +34,12 @@ function PortalShell() {
       window.location.href = ticketingUrl;
     }
   };
+
+  const canAccessDesk = Boolean(
+    isSuperAdmin ||
+    hasTicketingAccess ||
+    (currentUser.isInternal && currentUser.ticketingRole && currentUser.ticketingRole !== 'None')
+  );
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden bg-zinc-50 font-sans select-none relative">
@@ -72,7 +79,7 @@ function PortalShell() {
           </button>
 
           {/* External Link to Dedicated Ticketing Desk */}
-          {currentUser.isInternal && (
+          {canAccessDesk && (
             <a
               href={ticketingUrl}
               target="_blank"
@@ -84,6 +91,29 @@ function PortalShell() {
               <span>Service Desk</span>
               <ExternalLink className="w-3 h-3 text-zinc-400 group-hover:text-white/80 transition-colors ml-0.5" />
             </a>
+          )}
+
+          {/* User Profile & Sign Out */}
+          {currentUser && (
+            <div className="flex items-center gap-2 pl-2 border-l border-zinc-200">
+              <div className="hidden lg:flex flex-col text-right">
+                <span className="text-[11px] font-bold text-zinc-900 leading-tight truncate max-w-[120px]">
+                  {currentUser.fullName}
+                </span>
+                <span className="text-[10px] text-zinc-500 font-medium truncate max-w-[120px]">
+                  {currentUser.jobTitle || 'Employee'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-red-50 text-zinc-600 hover:text-red-600 border border-zinc-200/80 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                title="Sign out or switch account"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            </div>
           )}
         </div>
       </header>

@@ -9,11 +9,12 @@ import {
   Search,
   Command,
   User,
-  ShieldAlert
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
 
 function TicketingShell() {
-  const { currentUser, hasTicketingAccess } = useAuth();
+  const { currentUser, hasTicketingAccess, isSuperAdmin, logout } = useAuth();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Link to the separate Employee Portal (port 5173 locally or Vercel URL in prod)
@@ -34,6 +35,12 @@ function TicketingShell() {
       window.location.href = portalUrl;
     }
   };
+
+  const canAccessDesk = Boolean(
+    isSuperAdmin ||
+    hasTicketingAccess ||
+    (currentUser.isInternal && currentUser.ticketingRole && currentUser.ticketingRole !== 'None')
+  );
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden bg-zinc-50 font-sans select-none relative">
@@ -84,12 +91,35 @@ function TicketingShell() {
             <span>Employee Portal</span>
             <ExternalLink className="w-3 h-3 text-zinc-400 group-hover:text-white/80 transition-colors ml-0.5" />
           </a>
+
+          {/* User Profile & Sign Out / Switch Account */}
+          {currentUser && (
+            <div className="flex items-center gap-2 pl-2 border-l border-zinc-200">
+              <div className="hidden lg:flex flex-col text-right">
+                <span className="text-[11px] font-bold text-zinc-900 leading-tight truncate max-w-[120px]">
+                  {currentUser.fullName}
+                </span>
+                <span className="text-[10px] text-zinc-500 font-medium truncate max-w-[120px]">
+                  {currentUser.ticketingRole && currentUser.ticketingRole !== 'None' ? currentUser.ticketingRole : 'No Desk Access'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-red-50 text-zinc-600 hover:text-red-600 border border-zinc-200/80 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                title="Sign out or switch account"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Dimension Body - 100% Dedicated to Ticketing System */}
       <main className="flex-1 w-full flex flex-col overflow-hidden min-h-0">
-        {currentUser.isInternal && hasTicketingAccess ? (
+        {canAccessDesk ? (
           <TicketingManagement onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
         ) : (
           <div className="p-6 overflow-y-auto flex-1 flex items-center justify-center">
@@ -103,14 +133,24 @@ function TicketingShell() {
               </p>
               <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-[11px] text-zinc-600 text-left mb-4">
                 <div>Department: <strong className="text-zinc-900">{currentUser.departmentName || 'No Department'}</strong></div>
-                <div>Operational Role: <strong className="text-zinc-900">{currentUser.ticketingRole}</strong></div>
+                <div>Operational Role: <strong className="text-zinc-900">{currentUser.ticketingRole || 'None'}</strong></div>
               </div>
-              <a
-                href={portalUrl}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#13264C] text-white text-xs font-bold shadow-2xs hover:bg-[#0E1D3B] transition-all"
-              >
-                Return to Employee Portal
-              </a>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                <a
+                  href={portalUrl}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#13264C] text-white text-xs font-bold shadow-2xs hover:bg-[#0E1D3B] transition-all cursor-pointer"
+                >
+                  Return to Employee Portal
+                </a>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold transition-all cursor-pointer border border-zinc-200"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-zinc-500" />
+                  Sign Out / Switch Account
+                </button>
+              </div>
             </div>
           </div>
         )}
