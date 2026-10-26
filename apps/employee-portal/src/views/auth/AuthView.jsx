@@ -325,15 +325,15 @@ export default function AuthView() {
                   <label className="block text-xs font-bold text-zinc-700 mb-1">
                     Work Email Address
                   </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-400" />
+                  <div className="relative flex items-center">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
                     <input
                       type="email"
                       required
                       placeholder="e.g. gamboa.khinandrei@gmail.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                      className="w-full pl-10.5 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                     />
                   </div>
                 </div>
@@ -342,15 +342,15 @@ export default function AuthView() {
                   <label className="block text-xs font-bold text-zinc-700 mb-1">
                     Password
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-zinc-400" />
+                  <div className="relative flex items-center">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
                     <input
                       type="password"
                       required
                       placeholder="Enter password..."
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                      className="w-full pl-10.5 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                     />
                   </div>
                 </div>
@@ -439,8 +439,8 @@ export default function AuthView() {
                         </label>
                         <span className="text-[10px] text-zinc-500 font-medium">OTP code will be dispatched</span>
                       </div>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-400" />
+                      <div className="relative flex items-center">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
                         <input
                           name="workEmail"
                           type="email"
@@ -448,7 +448,7 @@ export default function AuthView() {
                           placeholder="e.g. employee@gmail.com"
                           value={signupForm.workEmail}
                           onChange={handleSignupChange}
-                          className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                          className="w-full pl-10.5 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                         />
                       </div>
                     </div>
