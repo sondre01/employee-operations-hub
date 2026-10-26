@@ -25,8 +25,14 @@ export default function TicketQueueView() {
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Department filter state: defaults to current user's department (Dev Operation for Super Admin)
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState(() => {
+    return currentUser?.departmentId ? currentUser.departmentId.toString() : '1';
+  });
 
   // View state: 'board' | 'list'
   const [viewMode, setViewMode] = useState('board');
@@ -50,14 +56,16 @@ export default function TicketQueueView() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch access employees first (which includes departmentId & departmentName)
-      const [ticketList, accessEmpList] = await Promise.all([
+      // Fetch access employees and departments
+      const [ticketList, accessEmpList, deptList] = await Promise.all([
         apiRequest('/tickets'),
         apiRequest('/access/employees').catch(() => apiRequest('/employees')),
+        apiRequest('/departments').catch(() => []),
       ]);
 
       setTickets(ticketList || []);
       setEmployees((accessEmpList || []).filter((e) => e.isInternal));
+      setDepartments(deptList || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -266,11 +274,17 @@ export default function TicketQueueView() {
     setDragOverCol(null);
   };
 
-  // Filter tickets by real-time search query
+  // Filter tickets by department queue isolation and real-time search query
   const filteredTickets = useMemo(() => {
-    if (!searchQuery.trim()) return tickets;
-    const q = searchQuery.toLowerCase().trim();
     return tickets.filter((t) => {
+      // Department Queue Isolation (Super Admin focuses on Dev Operation)
+      if (selectedDeptFilter !== 'all') {
+        const targetDeptId = parseInt(selectedDeptFilter, 10);
+        if (t.departmentId !== targetDeptId) return false;
+      }
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
       const idStr = t.id.toString();
       const title = (t.title || '').toLowerCase();
       const requester = (t.createdByEmployeeName || '').toLowerCase();
@@ -288,7 +302,7 @@ export default function TicketQueueView() {
         assignee.includes(q)
       );
     });
-  }, [tickets, searchQuery]);
+  }, [tickets, searchQuery, selectedDeptFilter]);
 
   return (
     <div className="h-full w-full flex-1 min-h-0 flex flex-col gap-3 font-sans select-none overflow-hidden">
@@ -374,6 +388,58 @@ export default function TicketQueueView() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#13264C]' : ''}`} />
           </button>
         </div>
+      </div>
+
+      {/* Department Focus & Queue Isolation Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 shrink-0 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setSelectedDeptFilter('all')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+            selectedDeptFilter === 'all'
+              ? 'bg-[#13264C] text-white shadow-2xs'
+              : 'bg-white hover:bg-zinc-100/80 text-zinc-600 border border-zinc-200/80'
+          }`}
+        >
+          <span>All Departments</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+            selectedDeptFilter === 'all' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'
+          }`}>
+            {tickets.length}
+          </span>
+        </button>
+
+        {departments.map((dept) => {
+          const isSelected = selectedDeptFilter === dept.id.toString();
+          const isUserDept = currentUser?.departmentId === dept.id || dept.name.toLowerCase().includes('dev operation');
+          const count = tickets.filter((t) => t.departmentId === dept.id).length;
+          return (
+            <button
+              key={dept.id}
+              type="button"
+              onClick={() => setSelectedDeptFilter(dept.id.toString())}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                isSelected
+                  ? 'bg-[#13264C] text-white shadow-2xs'
+                  : isUserDept
+                  ? 'bg-blue-50/70 hover:bg-blue-100/60 text-[#13264C] border border-blue-200'
+                  : 'bg-white hover:bg-zinc-100/80 text-zinc-600 border border-zinc-200/80'
+              }`}
+            >
+              <span>{dept.name}</span>
+              {isUserDept && (
+                <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full bg-[#D61766] text-white">
+                  Super Admin
+                </span>
+              )}
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                isSelected ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Content Area: Board or List */}

@@ -284,7 +284,7 @@ public class TicketService : ITicketService
                 alias = localPart.Split('+')[^1].ToLowerInvariant();
             }
 
-            if (alias == "devops" || alias == "infra" || toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud"))
+            if (alias == "devops" || alias == "infra" || toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud") || toEmail.Contains("gamboa.khinandrei"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Dev Operation"));
             }

@@ -94,7 +94,7 @@ END $$;";
             {
                 if (string.IsNullOrWhiteSpace(d.SupportEmail))
                 {
-                    if (d.Name.Contains("Dev Operation")) d.SupportEmail = "devops-support@company.io";
+                    if (d.Name.Contains("Dev Operation")) d.SupportEmail = "gamboa.khinandrei+devops@gmail.com";
                     else if (d.Name.Contains("IT Team")) d.SupportEmail = "it-support@company.io";
                     else if (d.Name.Contains("HR")) d.SupportEmail = "hr-support@company.io";
                     else if (d.Name.Contains("Finance")) d.SupportEmail = "finance-support@company.io";
@@ -114,7 +114,7 @@ END $$;";
         {
             Name = "Dev Operation",
             Description = "DevOps engineering, Kubernetes cluster management, CI/CD pipelines, and cloud infrastructure.",
-            SupportEmail = "devops-support@company.io",
+            SupportEmail = "gamboa.khinandrei+devops@gmail.com",
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };
 
