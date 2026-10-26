@@ -260,25 +260,29 @@ public class TicketService : ITicketService
         if (matchedDept == null && !string.IsNullOrWhiteSpace(toEmail))
         {
             var alias = string.Empty;
-            if (toEmail.Contains('+'))
+            var localPart = toEmail.Contains('@') ? toEmail.Split('@')[0] : toEmail;
+            if (localPart.Contains('_'))
             {
-                var afterPlus = toEmail.Split('+')[1];
-                alias = afterPlus.Split('@')[0].ToLowerInvariant();
+                alias = localPart.Split('_')[^1].ToLowerInvariant();
+            }
+            else if (localPart.Contains('+'))
+            {
+                alias = localPart.Split('+')[^1].ToLowerInvariant();
             }
 
             if (alias == "devops" || alias == "infra" || toEmail.Contains("devops") || toEmail.Contains("infra") || toEmail.Contains("cloud"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Dev Operation"));
             }
-            else if (alias == "it" || alias == "tech" || alias == "support" || toEmail.Contains("+it@") || toEmail.StartsWith("it-") || toEmail.Contains("hardware"))
+            else if (alias == "it" || alias == "tech" || alias == "support" || toEmail.Contains("_it@") || toEmail.Contains("+it@") || toEmail.StartsWith("it-") || toEmail.Contains("hardware"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("IT Team"));
             }
-            else if (alias == "hr" || alias == "people" || toEmail.Contains("+hr@") || toEmail.StartsWith("hr-") || toEmail.Contains("recruit"))
+            else if (alias == "hr" || alias == "people" || toEmail.Contains("_hr@") || toEmail.Contains("+hr@") || toEmail.StartsWith("hr-") || toEmail.Contains("recruit"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("HR"));
             }
-            else if (alias == "finance" || alias == "billing" || toEmail.Contains("+finance@") || toEmail.StartsWith("finance-") || toEmail.Contains("payroll"))
+            else if (alias == "finance" || alias == "billing" || toEmail.Contains("_finance@") || toEmail.Contains("+finance@") || toEmail.StartsWith("finance-") || toEmail.Contains("payroll"))
             {
                 matchedDept = departments.FirstOrDefault(d => d.Name.Contains("Finance"));
             }
