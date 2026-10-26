@@ -394,7 +394,9 @@ public class TicketService : ITicketService
             t.AssignedToEmployee?.FullName,
             t.ResolutionNotes,
             t.CreatedAtUtc,
-            t.UpdatedAtUtc
+            t.UpdatedAtUtc,
+            t.Department?.SupportEmail ?? string.Empty,
+            t.CreatedByEmployee?.WorkEmail ?? string.Empty
         );
     }
 }

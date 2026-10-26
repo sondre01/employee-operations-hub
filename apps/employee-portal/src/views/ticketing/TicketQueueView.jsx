@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Kanban,
   List,
@@ -8,7 +9,10 @@ import {
   X,
   RefreshCw,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Mail,
+  Eye,
+  Check
 } from 'lucide-react';
 
 const COLUMNS = [
@@ -28,6 +32,13 @@ export default function TicketQueueView() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Ticket Detail & Message Inspection Modal state
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedTicketCol, setSelectedTicketCol] = useState('Open');
+  const [selectedTicketAssigneeId, setSelectedTicketAssigneeId] = useState('');
+  const [modalResolutionNotes, setModalResolutionNotes] = useState('');
+  const [modalSaving, setModalSaving] = useState(false);
 
   // Department filter state: defaults to current user's department (Dev Operation for Super Admin)
   const [selectedDeptFilter, setSelectedDeptFilter] = useState(() => {
@@ -233,6 +244,47 @@ export default function TicketQueueView() {
         alert(`Error assigning ticket: ${err.message}`);
         fetchData();
       }
+    }
+  };
+
+  const handleOpenTicketModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setSelectedTicketCol(getTicketColumn(ticket));
+    setSelectedTicketAssigneeId(ticket.assignedToEmployeeId ? ticket.assignedToEmployeeId.toString() : '');
+    setModalResolutionNotes(ticket.resolutionNotes || '');
+  };
+
+  const handleSaveModalTicket = async () => {
+    if (!selectedTicket) return;
+    setModalSaving(true);
+    try {
+      const backendStatus = mapColumnToBackendStatus(selectedTicketCol);
+      const newAssigneeId = selectedTicketAssigneeId ? parseInt(selectedTicketAssigneeId, 10) : null;
+
+      await apiRequest(`/tickets/${selectedTicket.id}/status`, {
+        method: 'PATCH',
+        body: {
+          status: backendStatus,
+          assignedToEmployeeId: newAssigneeId,
+          resolutionNotes: modalResolutionNotes || null,
+        },
+      });
+
+      // Update local columns map
+      const updatedMap = { ...ticketColumns, [selectedTicket.id]: selectedTicketCol };
+      setTicketColumns(updatedMap);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedMap));
+      } catch (e) {
+        console.warn('Could not save to localStorage', e);
+      }
+
+      await fetchData();
+      setSelectedTicket(null);
+    } catch (err) {
+      alert(`Failed to update ticket: ${err.message}`);
+    } finally {
+      setModalSaving(false);
     }
   };
 
@@ -507,13 +559,13 @@ export default function TicketQueueView() {
                     const coMembers = getAssignableCoMembers(ticket);
 
                     return (
-                      /* Ticket Card - Strictly non-scrollable, contains ONLY the 6 requested fields */
                       <div
                         key={ticket.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, ticket.id)}
                         onDragEnd={handleDragEnd}
-                        className={`bg-white rounded-xl border border-zinc-200/90 p-3 shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing select-none flex flex-col gap-2 overflow-hidden shrink-0 ${
+                        onClick={() => handleOpenTicketModal(ticket)}
+                        className={`bg-white rounded-xl border border-zinc-200/90 p-3 shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing select-none flex flex-col gap-2.5 overflow-hidden shrink-0 ${
                           isDragging ? 'opacity-35 scale-[0.98] border-dashed border-[#13264C]' : ''
                         }`}
                       >
@@ -548,10 +600,29 @@ export default function TicketQueueView() {
                           </span>
                         </div>
 
+                        {/* Directed Department Email Desk */}
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50/70 border border-blue-200/70 rounded-lg text-[10px] text-[#13264C] font-semibold">
+                          <Mail className="w-3 h-3 text-[#13264C]" shrink-0 />
+                          <span className="truncate font-mono" title={ticket.departmentSupportEmail || 'Auto-routed support inbox'}>
+                            To: {ticket.departmentSupportEmail || `${(ticket.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
+                          </span>
+                        </div>
+
                         {/* 2. Ticket Issue */}
                         <div className="text-xs font-semibold text-zinc-900 leading-snug line-clamp-2">
                           {ticket.title}
                         </div>
+
+                        {/* Incoming Message Snippet */}
+                        {ticket.description ? (
+                          <div className="text-[11px] text-zinc-600 line-clamp-2 bg-zinc-50 rounded-lg p-2 border border-zinc-200/60 leading-snug font-sans">
+                            &ldquo;{ticket.description}&rdquo;
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-zinc-400 italic">
+                            No message body provided.
+                          </div>
+                        )}
 
                         {/* 3. Person who raised it & 4. Department */}
                         <div className="flex flex-col gap-1 text-[11px] font-medium text-zinc-500">
@@ -559,10 +630,15 @@ export default function TicketQueueView() {
                             <span className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
                               Raised By
                             </span>
-                            <span className="text-zinc-700 font-semibold truncate max-w-[140px]">
+                            <span className="text-zinc-700 font-semibold truncate max-w-[140px]" title={ticket.createdByEmployeeEmail || ''}>
                               {ticket.createdByEmployeeName || 'Unknown'}
                             </span>
                           </div>
+                          {ticket.createdByEmployeeEmail && (
+                            <div className="text-[10px] text-zinc-400 font-mono text-right truncate">
+                              {ticket.createdByEmployeeEmail}
+                            </div>
+                          )}
                           <div className="flex items-center justify-between gap-1">
                             <span className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
                               Department
@@ -580,7 +656,6 @@ export default function TicketQueueView() {
                           </span>
 
                           {canAssign ? (
-                            /* Only department managers can assign to co-members of this specific department */
                             <select
                               value={ticket.assignedToEmployeeId || ''}
                               onChange={(e) => handleAssignTicket(ticket.id, e.target.value)}
@@ -596,7 +671,6 @@ export default function TicketQueueView() {
                               ))}
                             </select>
                           ) : (
-                            /* Regular employee or non-department manager: Clean read-only display */
                             <span
                               className={`text-[11px] truncate max-w-[145px] ${
                                 ticket.assignedToEmployeeName
@@ -613,6 +687,19 @@ export default function TicketQueueView() {
                             </span>
                           )}
                         </div>
+
+                        {/* Inspect Message Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenTicketModal(ticket);
+                          }}
+                          className="w-full mt-0.5 py-1.5 px-2 rounded-lg bg-zinc-50 hover:bg-[#13264C] hover:text-white border border-zinc-200 text-zinc-700 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Inspect Email &amp; Message</span>
+                        </button>
                       </div>
                     );
                   })}
@@ -638,16 +725,18 @@ export default function TicketQueueView() {
                   : 'No tickets found in the queue.'}
               </div>
             ) : (
-              <table className="w-full text-xs text-left border-collapse min-w-[760px]">
+              <table className="w-full text-xs text-left border-collapse min-w-[880px]">
                 <thead className="bg-zinc-50/90 sticky top-0 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider z-10">
                   <tr>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Ticket ID</th>
-                    <th className="py-2.5 px-3.5">Ticket Issue</th>
+                    <th className="py-2.5 px-3.5 whitespace-nowrap">Directed Email Desk</th>
+                    <th className="py-2.5 px-3.5">Ticket Issue &amp; Incoming Message</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Raised By</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Department</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Critical Level</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Status</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Assigned Staff</th>
+                    <th className="py-2.5 px-3.5 whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
@@ -663,14 +752,32 @@ export default function TicketQueueView() {
                           #{t.id}
                         </td>
 
-                        {/* 2. Ticket Issue */}
+                        {/* Directed Department Email Desk */}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50/80 border border-blue-200/80 w-fit">
+                            <Mail className="w-3 h-3 text-[#13264C]" />
+                            <span className="font-mono text-[10px] font-bold text-[#13264C]">
+                              {t.departmentSupportEmail || `${(t.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 2. Ticket Issue & Message */}
                         <td className="py-3 px-3.5 max-w-sm">
-                          <span className="font-semibold text-zinc-900">{t.title}</span>
+                          <div className="font-bold text-zinc-900 leading-snug">{t.title}</div>
+                          {t.description && (
+                            <div className="text-[11px] text-zinc-500 line-clamp-1 italic mt-0.5">
+                              &ldquo;{t.description}&rdquo;
+                            </div>
+                          )}
                         </td>
 
                         {/* 3. Person who raised it */}
                         <td className="py-3 px-3.5 text-zinc-700 whitespace-nowrap">
-                          {t.createdByEmployeeName || 'Unknown'}
+                          <div className="font-semibold text-zinc-900">{t.createdByEmployeeName || 'Unknown'}</div>
+                          {t.createdByEmployeeEmail && (
+                            <div className="font-mono text-[10px] text-zinc-400">{t.createdByEmployeeEmail}</div>
+                          )}
                         </td>
 
                         {/* 4. Department */}
@@ -724,7 +831,6 @@ export default function TicketQueueView() {
                         {/* 6. Person assigned by manager */}
                         <td className="py-3 px-3.5 whitespace-nowrap">
                           {canAssign ? (
-                            /* Only department managers can assign to co-members of this specific department */
                             <select
                               value={t.assignedToEmployeeId || ''}
                               onChange={(e) => handleAssignTicket(t.id, e.target.value)}
@@ -739,7 +845,6 @@ export default function TicketQueueView() {
                               ))}
                             </select>
                           ) : (
-                            /* Regular employee or non-department manager: Clean read-only display */
                             <span
                               className={`text-xs ${
                                 t.assignedToEmployeeName
@@ -756,6 +861,18 @@ export default function TicketQueueView() {
                             </span>
                           )}
                         </td>
+
+                        {/* Action: Inspect Message Details */}
+                        <td className="py-3 px-3.5 whitespace-nowrap text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTicketModal(t)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-[#13264C] hover:text-white text-zinc-700 text-[11px] font-bold transition-colors cursor-pointer border border-zinc-200"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View</span>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -765,6 +882,212 @@ export default function TicketQueueView() {
           </div>
         </div>
       )}
+
+      {/* Ticket Detail & Inbound Message Inspection Modal */}
+      <AnimatePresence>
+        {selectedTicket && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl border border-zinc-200 shadow-xl max-w-2xl w-full p-5 max-h-[90vh] flex flex-col overflow-hidden font-sans"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-zinc-100 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-mono font-bold text-sm text-white bg-[#13264C] px-2.5 py-1 rounded-lg">
+                    #{selectedTicket.id}
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950 m-0">Inbound Message &amp; Ticket Routing</h3>
+                    <div className="text-[11px] text-zinc-500">
+                      Direct email delivery envelope &amp; ticket details
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicket(null)}
+                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer p-1 rounded-lg hover:bg-zinc-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="overflow-y-auto flex-1 py-4 flex flex-col gap-3.5">
+                {/* Routing Envelope Header */}
+                <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/70 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between gap-2 border-b border-blue-100 pb-2">
+                    <div className="flex items-center gap-1.5 text-xs text-[#13264C] font-bold">
+                      <Mail className="w-4 h-4 text-[#13264C]" />
+                      <span>Directed Support Inbox (To):</span>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-[#13264C] bg-white px-2.5 py-0.5 rounded-md border border-blue-200">
+                      {selectedTicket.departmentSupportEmail || `${(selectedTicket.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        From (Sender)
+                      </span>
+                      <div className="font-semibold text-zinc-900 mt-0.5">
+                        {selectedTicket.createdByEmployeeName || 'Unknown Requester'}
+                      </div>
+                      {selectedTicket.createdByEmployeeEmail && (
+                        <div className="font-mono text-[11px] text-zinc-500">
+                          &lt;{selectedTicket.createdByEmployeeEmail}&gt;
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        Assigned Department Desk
+                      </span>
+                      <div className="font-semibold text-zinc-900 mt-0.5">
+                        {selectedTicket.departmentName || 'General Desk'}
+                      </div>
+                      <div className="text-[11px] text-zinc-500">
+                        {selectedTicket.departmentName?.toLowerCase().includes('dev operation')
+                          ? 'Super Admin / DevOps Primary Queue'
+                          : 'Operational Resolver Queue'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-blue-100">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        Date &amp; Time Received
+                      </span>
+                      <span className="font-medium text-zinc-700">
+                        {new Date(selectedTicket.createdAtUtc).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        Priority Level
+                      </span>
+                      <span className="font-bold text-zinc-900">
+                        {selectedTicket.priority || 'Normal'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email Subject / Ticket Issue */}
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1 uppercase tracking-wider">
+                    Subject / Concern Title
+                  </label>
+                  <div className="text-xs font-bold text-zinc-900 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2">
+                    {selectedTicket.title}
+                  </div>
+                </div>
+
+                {/* Inbound Email Body / Full Message */}
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1 uppercase tracking-wider">
+                    Inbound Message Body
+                  </label>
+                  <div className="text-xs text-zinc-800 bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 whitespace-pre-wrap leading-relaxed font-sans max-h-48 overflow-y-auto">
+                    {selectedTicket.description || (
+                      <span className="text-zinc-400 italic">No message body was attached to this ticket.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status & Resolution Section */}
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col gap-3">
+                  <div className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#13264C]" />
+                    <span>Resolver Controls &amp; Status</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-600 mb-1 uppercase tracking-wider">
+                        Queue Column / Status
+                      </label>
+                      <select
+                        value={selectedTicketCol}
+                        onChange={(e) => setSelectedTicketCol(e.target.value)}
+                        className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#13264C]"
+                      >
+                        {COLUMNS.map((col) => (
+                          <option key={col.id} value={col.id}>
+                            {col.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-600 mb-1 uppercase tracking-wider">
+                        Assigned Resolver
+                      </label>
+                      {canUserAssignTicket(selectedTicket) ? (
+                        <select
+                          value={selectedTicketAssigneeId}
+                          onChange={(e) => setSelectedTicketAssigneeId(e.target.value)}
+                          className="w-full text-xs font-medium bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#13264C]"
+                        >
+                          <option value="">Unassigned</option>
+                          {getAssignableCoMembers(selectedTicket).map((emp) => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.fullName}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 truncate">
+                          {selectedTicket.assignedToEmployeeName || 'Unassigned'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 mb-1 uppercase tracking-wider">
+                      Resolution Notes / Resolver Response
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={modalResolutionNotes}
+                      onChange={(e) => setModalResolutionNotes(e.target.value)}
+                      placeholder="Add resolution or troubleshooting notes..."
+                      className="w-full text-xs bg-white border border-zinc-200 rounded-lg p-2 text-zinc-800 focus:outline-none focus:border-[#13264C]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicket(null)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveModalTicket}
+                  disabled={modalSaving}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] cursor-pointer disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{modalSaving ? 'Saving Changes...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

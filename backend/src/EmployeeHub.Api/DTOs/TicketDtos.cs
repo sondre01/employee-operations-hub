@@ -17,7 +17,9 @@ public record TicketDto(
     string? AssignedToEmployeeName,
     string? ResolutionNotes,
     DateTime CreatedAtUtc,
-    DateTime UpdatedAtUtc
+    DateTime UpdatedAtUtc,
+    string? DepartmentSupportEmail = null,
+    string? CreatedByEmployeeEmail = null
 );
 
 public record CreateTicketDto(

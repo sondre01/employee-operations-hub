@@ -274,8 +274,12 @@ export default function MyTicketsView() {
                       <td className="py-3 px-4 font-mono font-bold text-[#13264C] whitespace-nowrap">
                         #{t.id}
                       </td>
-                      <td className="py-3 px-4 text-zinc-700 font-semibold whitespace-nowrap">
-                        {t.departmentName || 'General Desk'}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="text-zinc-900 font-semibold">{t.departmentName || 'General Desk'}</div>
+                        <div className="font-mono text-[10px] text-[#13264C] flex items-center gap-1 mt-0.5">
+                          <Mail className="w-2.5 h-2.5" />
+                          <span>{t.departmentSupportEmail || `${(t.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}</span>
+                        </div>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span
