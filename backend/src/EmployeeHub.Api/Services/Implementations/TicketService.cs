@@ -143,7 +143,7 @@ public class TicketService : ITicketService
         return MapToDto(ticket);
     }
 
-    public async Task<TicketDto?> AssignTicketAsync(int id, int assignedToEmployeeId)
+    public async Task<TicketDto?> AssignTicketAsync(int id, int? assignedToEmployeeId)
     {
         var ticket = await _context.Tickets
             .Include(t => t.CreatedByEmployee)
@@ -153,19 +153,22 @@ public class TicketService : ITicketService
 
         if (ticket == null) return null;
 
-        var employee = await _context.Employees.FindAsync(assignedToEmployeeId);
+        if (!assignedToEmployeeId.HasValue || assignedToEmployeeId.Value <= 0)
+        {
+            ticket.AssignedToEmployeeId = null;
+            ticket.AssignedToEmployee = null;
+            ticket.UpdatedAtUtc = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return MapToDto(ticket);
+        }
+
+        var employee = await _context.Employees.FindAsync(assignedToEmployeeId.Value);
         if (employee == null)
         {
             throw new ArgumentException($"Employee with ID {assignedToEmployeeId} not found.");
         }
 
-        // Enforce department co-member constraint
-        if (ticket.DepartmentId.HasValue && employee.DepartmentId.HasValue && employee.DepartmentId.Value != ticket.DepartmentId.Value)
-        {
-            throw new ArgumentException($"Employee '{employee.FullName}' belongs to a different department and cannot be assigned to this {ticket.Department?.Name ?? "department"} ticket.");
-        }
-
-        ticket.AssignedToEmployeeId = assignedToEmployeeId;
+        ticket.AssignedToEmployeeId = assignedToEmployeeId.Value;
         ticket.AssignedToEmployee = employee;
         if (ticket.Status == TicketStatus.Open)
         {
@@ -212,12 +215,23 @@ public class TicketService : ITicketService
             .Select(g =>
             {
                 var sample = g.First();
+                var name = sample.AssignedToEmployee != null ? sample.AssignedToEmployee.FullName : "Resolver #" + g.Key;
+                var dept = sample.Department != null ? sample.Department.Name : "General Support";
+                int inProg = g.Count(t => t.Status == TicketStatus.InProgress);
+                int resCount = g.Count(t => t.Status == TicketStatus.Resolved);
+                int totalCount = g.Count();
+
                 return new ResolverStatDto(
-                    g.Key,
-                    sample.AssignedToEmployee != null ? sample.AssignedToEmployee.FullName : "Resolver #" + g.Key,
-                    sample.Department != null ? sample.Department.Name : "General",
-                    g.Count(),
-                    g.Count(t => t.Status == TicketStatus.Resolved)
+                    EmployeeId: g.Key,
+                    EmployeeName: name,
+                    DepartmentName: dept,
+                    AssignedCount: totalCount,
+                    ResolvedCount: resCount,
+                    InProgress: inProg,
+                    Resolved: resCount,
+                    Total: totalCount,
+                    ResolverId: g.Key,
+                    ResolverName: name
                 );
             })
             .OrderByDescending(r => r.AssignedCount)

@@ -36,7 +36,7 @@ public record UpdateTicketStatusDto(
 );
 
 public record AssignTicketDto(
-    int AssignedToEmployeeId
+    int? AssignedToEmployeeId
 );
 
 public record InboundEmailTicketDto(

@@ -264,25 +264,35 @@ export default function TicketStatsView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
-                {stats.byResolver?.map((res) => (
-                  <tr key={res.resolverId} className="hover:bg-zinc-50/80 transition-colors">
-                    <td className="py-3 px-4 flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#13264C] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                        {res.resolverName[0] || 'R'}
-                      </div>
-                      <span className="font-bold text-zinc-950">{res.resolverName}</span>
-                    </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#D61766]">
-                      {res.inProgress}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-bold text-emerald-600">
-                      {res.resolved}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-bold text-zinc-900">
-                      {res.total}
-                    </td>
-                  </tr>
-                ))}
+                {stats.byResolver?.map((res, idx) => {
+                  const name = res.resolverName || res.employeeName || 'Staff Resolver';
+                  const id = res.resolverId || res.employeeId || idx;
+                  const inProg = res.inProgress ?? (res.assignedCount ? res.assignedCount - (res.resolvedCount || 0) : 0);
+                  const resolved = res.resolved ?? res.resolvedCount ?? 0;
+                  const total = res.total ?? res.assignedCount ?? (inProg + resolved);
+                  return (
+                    <tr key={id} className="hover:bg-zinc-50/80 transition-colors">
+                      <td className="py-3 px-4 flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#13264C] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          {name[0] || 'R'}
+                        </div>
+                        <div>
+                          <span className="font-bold text-zinc-950 block">{name}</span>
+                          <span className="text-[10px] text-zinc-400 block">{res.departmentName || 'Operations'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#D61766]">
+                        {inProg}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-emerald-600">
+                        {resolved}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-zinc-900">
+                        {total}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

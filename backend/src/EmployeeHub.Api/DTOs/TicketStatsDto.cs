@@ -14,7 +14,12 @@ public record ResolverStatDto(
     string EmployeeName,
     string DepartmentName,
     int AssignedCount,
-    int ResolvedCount
+    int ResolvedCount,
+    int InProgress = 0,
+    int Resolved = 0,
+    int Total = 0,
+    int? ResolverId = null,
+    string? ResolverName = null
 );
 
 public record PersonalStatsDto(
