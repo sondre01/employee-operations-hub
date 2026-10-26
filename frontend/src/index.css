@@ -230,11 +230,7 @@ label {
   margin-bottom: 4px;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="date"],
-select,
-textarea {
+:where(input[type="text"], input[type="email"], input[type="date"], select, textarea) {
   font-family: inherit;
   font-size: 13px;
   color: #0f172a;
@@ -246,11 +242,7 @@ textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="date"]:focus,
-select:focus,
-textarea:focus {
+:where(input[type="text"], input[type="email"], input[type="date"], select, textarea):focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }

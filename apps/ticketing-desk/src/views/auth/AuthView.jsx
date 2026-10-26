@@ -344,7 +344,8 @@ export default function AuthView() {
                       placeholder="e.g. gamboa.khinandrei@gmail.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full pl-10.5 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                      style={{ paddingLeft: '44px' }}
+                      className="w-full !pl-11 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                     />
                   </div>
                 </div>
@@ -361,7 +362,8 @@ export default function AuthView() {
                       placeholder="Enter password..."
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full pl-10.5 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                      style={{ paddingLeft: '44px' }}
+                      className="w-full !pl-11 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                     />
                   </div>
                 </div>
@@ -459,7 +461,8 @@ export default function AuthView() {
                           placeholder="e.g. employee@gmail.com"
                           value={signupForm.workEmail}
                           onChange={handleSignupChange}
-                          className="w-full pl-10.5 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
+                          style={{ paddingLeft: '44px' }}
+                          className="w-full !pl-11 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
                         />
                       </div>
                     </div>
