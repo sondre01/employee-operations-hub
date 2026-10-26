@@ -1,4 +1,4 @@
-    using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using EmployeeHub.Api.Data;
 using EmployeeHub.Api.Services.Implementations;

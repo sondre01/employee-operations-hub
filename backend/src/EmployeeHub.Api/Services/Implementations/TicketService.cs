@@ -407,49 +407,6 @@ public class TicketService : ITicketService
             // Non-blocking confirmation
         }
 
-        // 6. Notify ALL active members and managers of this specific department via email
-        try
-        {
-            var deptMembers = await _context.Employees
-                .Where(e => e.DepartmentId == matchedDept.Id && e.IsActive && !string.IsNullOrWhiteSpace(e.WorkEmail))
-                .ToListAsync();
-
-            foreach (var staff in deptMembers)
-            {
-                var isMgr = staff.TicketingRole == TicketingRole.DepartmentManager || 
-                            (staff.JobTitle != null && staff.JobTitle.ToLower().Contains("manager"));
-                var roleLabel = isMgr ? "Department Manager" : "Team Member";
-
-                await _emailService.SendNotificationAsync(
-                    staff.WorkEmail,
-                    $"[New {matchedDept.Name} Ticket #{ticket.Id}] {ticket.Title}",
-                    $@"<div style='font-family: Arial, sans-serif; color: #1e293b; max-width: 600px;'>
-                        <div style='background: #13264C; padding: 16px; border-radius: 8px 8px 0 0; color: white;'>
-                            <h2 style='margin:0; font-size: 18px;'>New Inbound Department Ticket #{ticket.Id}</h2>
-                            <p style='margin:4px 0 0; font-size: 12px; opacity: 0.9;'>Designated Desk: {matchedDept.Name} ({toEmail})</p>
-                        </div>
-                        <div style='border: 1px solid #e2e8f0; border-top: none; padding: 20px; border-radius: 0 0 8px 8px;'>
-                            <p>Hello <strong>{staff.FullName}</strong> ({roleLabel}),</p>
-                            <p>A new support request has been received by your department's designated email address (<code>{toEmail}</code>).</p>
-                            <table style='width: 100%; border-collapse: collapse; font-size: 13px; margin: 15px 0;'>
-                                <tr><td style='padding: 6px 0; color: #64748b; width: 120px;'><strong>Requester:</strong></td><td>{employee.FullName} &lt;{employee.WorkEmail}&gt;</td></tr>
-                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Department:</strong></td><td>{matchedDept.Name}</td></tr>
-                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Designated Inbox:</strong></td><td><code>{toEmail}</code></td></tr>
-                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Priority:</strong></td><td>{ticket.Priority}</td></tr>
-                                <tr><td style='padding: 6px 0; color: #64748b;'><strong>Subject:</strong></td><td><strong>{ticket.Title}</strong></td></tr>
-                            </table>
-                            <div style='background: #f8fafc; border-left: 4px solid #13264C; padding: 12px 16px; font-size: 13px; margin: 15px 0; white-space: pre-wrap;'>{System.Net.WebUtility.HtmlEncode(ticket.Description)}</div>
-                            <p style='font-size: 12px; color: #64748b;'>Please log in to the Employee Hub Ticketing Desk to view or assign this ticket.</p>
-                        </div>
-                    </div>"
-                );
-            }
-        }
-        catch
-        {
-            // Non-blocking notification dispatch
-        }
-
         return new InboundEmailResultDto(
             true,
             $"Ticket #{ticket.Id} created successfully for {matchedDept.Name}.",

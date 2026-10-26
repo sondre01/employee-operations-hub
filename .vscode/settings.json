@@ -1,4 +1,16 @@
 {
   "liveServer.settings.port": 5500,
-  "liveServer.settings.NoBrowser": false
+  "liveServer.settings.NoBrowser": false,
+  "dotnet.dotnetPath": "/home/sondre/.dotnet",
+  "dotnet.defaultSolution": "backend/EmployeeHub.slnx",
+  "dotnetAcquisitionExtension.existingDotnetPath": [
+    {
+      "extensionId": "ms-dotnettools.csharp",
+      "path": "/home/sondre/.dotnet/dotnet"
+    },
+    {
+      "extensionId": "ms-dotnettools.csdevkit",
+      "path": "/home/sondre/.dotnet/dotnet"
+    }
+  ]
 }

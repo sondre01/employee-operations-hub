@@ -700,29 +700,10 @@ export default function TicketQueueView() {
                           </span>
                         </div>
 
-                        {/* Directed Department Email Desk */}
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50/70 border border-blue-200/70 rounded-lg text-[10px] text-[#13264C] font-semibold">
-                          <Mail className="w-3 h-3 text-[#13264C] shrink-0" />
-                          <span className="truncate font-mono" title={ticket.departmentSupportEmail || 'Auto-routed support inbox'}>
-                            To: {ticket.departmentSupportEmail || `${(ticket.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
-                          </span>
-                        </div>
-
                         {/* 2. Ticket Issue */}
                         <div className="text-xs font-semibold text-zinc-900 leading-snug line-clamp-2">
                           {ticket.title}
                         </div>
-
-                        {/* Incoming Message Snippet */}
-                        {ticket.description ? (
-                          <div className="text-[11px] text-zinc-600 line-clamp-2 bg-zinc-50 rounded-lg p-2 border border-zinc-200/60 leading-snug font-sans">
-                            &ldquo;{ticket.description}&rdquo;
-                          </div>
-                        ) : (
-                          <div className="text-[10px] text-zinc-400 italic">
-                            No message body provided.
-                          </div>
-                        )}
 
                         {/* 3. Person who raised it & 4. Department */}
                         <div className="flex flex-col gap-1 text-[11px] font-medium text-zinc-500">
@@ -730,15 +711,10 @@ export default function TicketQueueView() {
                             <span className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
                               Raised By
                             </span>
-                            <span className="text-zinc-700 font-semibold truncate max-w-[140px]" title={ticket.createdByEmployeeEmail || ''}>
+                            <span className="text-zinc-700 font-semibold truncate max-w-[140px]">
                               {ticket.createdByEmployeeName || 'Unknown'}
                             </span>
                           </div>
-                          {ticket.createdByEmployeeEmail && (
-                            <div className="text-[10px] text-zinc-400 font-mono text-right truncate">
-                              {ticket.createdByEmployeeEmail}
-                            </div>
-                          )}
                           <div className="flex items-center justify-between gap-1">
                             <span className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
                               Department
@@ -787,19 +763,6 @@ export default function TicketQueueView() {
                             </span>
                           )}
                         </div>
-
-                        {/* Inspect Message Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenTicketModal(ticket);
-                          }}
-                          className="w-full mt-0.5 py-1.5 px-2 rounded-lg bg-zinc-50 hover:bg-[#13264C] hover:text-white border border-zinc-200 text-zinc-700 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Inspect Email &amp; Message</span>
-                        </button>
                       </div>
                     );
                   })}
