@@ -70,7 +70,7 @@ docker compose up --build
 ## 🎯 Role-Based Access Control (RBAC) Personas
 
 Pre-seeded testing credentials with password `Password123!`:
-- **👑 Super Admin / DevOps Manager**: `superadmin@company.io` — Full access across all queues, stats, department configuration, and employee access delegation.
+- **👑 Super Admin / Director of Dev Operations**: `gamboa.khinandrei@gmail.com` (Khin Andrei Gamboa) — Full access across all queues, stats, department configuration, and employee access delegation.
 - **🛠️ DevOps Member**: `devops@company.io` — DevOps ticket queue and delegated employee role assignment.
 - **👥 Department Manager (HR)**: `hr.manager@company.io` — Departmental queue management.
 - **💻 Department Specialist (IT)**: `it.specialist@company.io` — Technical support and resolution.

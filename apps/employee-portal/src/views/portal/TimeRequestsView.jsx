@@ -31,7 +31,7 @@ export default function TimeRequestsView() {
     type: 'Time Correction / Missed Log',
     incidentDate: new Date().toISOString().split('T')[0],
     hours: '1.0 hr',
-    manager: 'Danilo Navarro (DevOps Director)',
+    manager: 'Khin Andrei Gamboa (DevOps Director & Super Admin)',
     reason: ''
   });
 
@@ -66,7 +66,7 @@ export default function TimeRequestsView() {
       type: 'Time Correction / Missed Log',
       incidentDate: new Date().toISOString().split('T')[0],
       hours: '1.0 hr',
-      manager: 'Danilo Navarro (DevOps Director)',
+      manager: 'Khin Andrei Gamboa (DevOps Director & Super Admin)',
       reason: ''
     });
     setTimeout(() => setSuccessMessage(null), 5000);
@@ -347,7 +347,7 @@ export default function TimeRequestsView() {
               onChange={(e) => setForm({ ...form, manager: e.target.value })}
               className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
             >
-              <option value="Danilo Navarro (DevOps Director)">Danilo Navarro — Director of Dev Operations &amp; Infrastructure</option>
+              <option value="Khin Andrei Gamboa (DevOps Director & Super Admin)">Khin Andrei Gamboa — Director of Dev Operations &amp; Super Admin</option>
               <option value="Maria Santos (HR Manager)">Maria Santos — HR &amp; Talent Operations Manager</option>
               <option value="Christian Reyes (DevOps Normal Admin)">Christian Reyes — Senior DevOps Lead</option>
               <option value="Grace Tan (Finance Specialist)">Grace Tan — Finance &amp; Payroll Lead</option>

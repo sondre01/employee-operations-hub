@@ -202,8 +202,8 @@ function HubShell() {
                 </div>
                 <p className="text-[11px] text-zinc-500">
                   Please contact your System Administrator at{' '}
-                  <a href="mailto:superadmin@company.io" className="text-[#13264C] font-semibold underline">
-                    superadmin@company.io
+                  <a href="mailto:gamboa.khinandrei@gmail.com" className="text-[#13264C] font-semibold underline">
+                    gamboa.khinandrei@gmail.com
                   </a>{' '}
                   for role elevation.
                 </p>

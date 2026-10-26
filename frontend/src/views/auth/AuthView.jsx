@@ -257,7 +257,7 @@ export default function AuthView() {
                     <input
                       type="email"
                       required
-                      placeholder="e.g. superadmin@company.io"
+                      placeholder="e.g. gamboa.khinandrei@gmail.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"
@@ -307,7 +307,7 @@ export default function AuthView() {
                       name="firstName"
                       type="text"
                       required
-                      placeholder="e.g. Danilo"
+                      placeholder="e.g. Khin Andrei"
                       value={signupForm.firstName}
                       onChange={handleSignupChange}
                       className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] focus:ring-2 focus:ring-[#13264C]/10 transition-all font-medium text-zinc-900"

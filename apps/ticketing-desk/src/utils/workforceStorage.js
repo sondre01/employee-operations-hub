@@ -19,7 +19,7 @@ const DEFAULT_REQUESTS = [
     type: 'Overtime Pre-Approval',
     incidentDate: '2026-10-24',
     hours: '2.0 hrs',
-    manager: 'Danilo Navarro (DevOps Director)',
+    manager: 'Khin Andrei Gamboa (DevOps Director & Super Admin)',
     reason: 'Database migration and Kubernetes ingress routing patch release',
     submittedAt: '2026-10-22',
     status: 'Approved'
@@ -39,7 +39,7 @@ const DEFAULT_REQUESTS = [
     type: 'Official Business / Shift Adjustment',
     incidentDate: '2026-10-09',
     hours: 'Full Day',
-    manager: 'Danilo Navarro (DevOps Director)',
+    manager: 'Khin Andrei Gamboa (DevOps Director & Super Admin)',
     reason: 'Client technical discovery workshop with Danish engineering leads',
     submittedAt: '2026-10-07',
     status: 'Approved'

@@ -487,7 +487,7 @@ export default function EmployeeDirectoryView() {
                   name="firstName"
                   type="text"
                   required
-                  placeholder="e.g. Danilo"
+                  placeholder="e.g. Khin Andrei"
                   value={formData.firstName}
                   onChange={handleFormChange}
                   className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#13264C] font-medium text-zinc-900"

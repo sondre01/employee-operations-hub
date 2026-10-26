@@ -37,8 +37,8 @@ export default function TicketQueueView() {
   // Inbound Email Simulator state
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [simForm, setSimForm] = useState({
-    fromName: 'Danilo Navarro',
-    fromEmail: 'danilo.navarro@gmail.com',
+    fromName: 'Khin Andrei Gamboa',
+    fromEmail: 'gamboa.khinandrei@gmail.com',
     toEmail: 'it-support@company.io',
     subject: 'Workstation power supply failure after storm',
     body: 'Hi IT team, my secondary monitor and desktop power unit will not turn on today. Can an IT specialist check this or issue a temporary replacement unit? Thanks!'
@@ -116,8 +116,8 @@ export default function TicketQueueView() {
     setSimError(null);
     if (preset === 'it') {
       setSimForm({
-        fromName: 'Danilo Navarro',
-        fromEmail: 'danilo.navarro@gmail.com',
+        fromName: 'Khin Andrei Gamboa',
+        fromEmail: 'gamboa.khinandrei@gmail.com',
         toEmail: 'it-support@company.io',
         subject: 'VPN Connection drops intermittently on remote shift',
         body: 'Hello IT team, my OpenVPN client disconnects every 15 minutes during the afternoon sprint. Could you review my routing logs?'
@@ -132,8 +132,8 @@ export default function TicketQueueView() {
       });
     } else if (preset === 'devops') {
       setSimForm({
-        fromName: 'Danilo Navarro',
-        fromEmail: 'danilo.navarro@gmail.com',
+        fromName: 'Khin Andrei Gamboa',
+        fromEmail: 'gamboa.khinandrei@gmail.com',
         toEmail: 'devops-support@company.io',
         subject: 'Kubernetes staging namespace rollout failure',
         body: 'Hi DevOps team, our latest build helm deployment to staging-alpha failed with CrashLoopBackOff on pod container restart. Please inspect.'

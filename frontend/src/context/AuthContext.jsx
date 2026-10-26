@@ -39,10 +39,10 @@ export function AuthProvider({ children }) {
       setPersonas([
         {
           key: 'superadmin',
-          label: '👑 Super Admin (DevOps Manager)',
-          email: 'superadmin@company.io',
+          label: '👑 Super Admin (Khin Andrei Gamboa)',
+          email: 'gamboa.khinandrei@gmail.com',
           password: 'Password123!',
-          roleDescription: 'Manager of Dev Operation. Full Access: Manage all tickets, overall stats, add departments, manage employee access.',
+          roleDescription: 'Director of Dev Operations & Super Admin. Full Access: Manage all tickets, overall stats, add departments, manage employee access.',
           ticketingRole: 'SuperAdmin',
           departmentName: 'Dev Operation'
         },
