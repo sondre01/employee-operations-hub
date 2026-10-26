@@ -148,16 +148,16 @@ END $$;";
         // 2. Seed Employees with RBAC Roles and Default Passwords
         string defaultPasswordHash = PasswordHasher.HashPassword("Password123!");
 
-        // Super Admin (The Manager of Dev Operation)
+        // Super Admin (Director of Dev Operations & Infrastructure)
         var superAdmin = new Employee
         {
-            FirstName = "Danilo",
-            MiddleName = "R.",
-            LastName = "Navarro",
-            FullName = "Danilo Navarro",
-            WorkEmail = "superadmin@company.io",
+            FirstName = "Khin Andrei",
+            MiddleName = "Roque",
+            LastName = "Gamboa",
+            FullName = "Khin Andrei Gamboa",
+            WorkEmail = "gamboa.khinandrei@gmail.com",
             PasswordHash = defaultPasswordHash,
-            JobTitle = "Director of Dev Operations & Infrastructure",
+            JobTitle = "Director of Dev Operations & Super Admin",
             IsInternal = true,
             EmploymentType = EmploymentType.InternalCore,
             Role = UserRole.AdminHr,
@@ -166,7 +166,7 @@ END $$;";
             HasTicketingAccess = true,
             CanAssignEmployees = true,
             ClientName = null,
-            PrimaryTechStack = "Kubernetes, Terraform, AWS, Azure, Linux",
+            PrimaryTechStack = "Full-Stack, Cloud Operations & DevOps",
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow.AddMonths(-12)
         };

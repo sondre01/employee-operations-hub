@@ -64,10 +64,10 @@ export function AuthProvider({ children }) {
       setPersonas([
         {
           key: 'superadmin',
-          label: '👑 Super Admin (DevOps Manager)',
-          email: 'superadmin@company.io',
+          label: '👑 Super Admin (Khin Andrei Gamboa)',
+          email: 'gamboa.khinandrei@gmail.com',
           password: 'Password123!',
-          roleDescription: 'Manager of Dev Operation. Full Access: Manage all tickets, overall stats, add departments, manage employee access.',
+          roleDescription: 'Director of Dev Operations & Super Admin. Full Access: Manage all tickets, overall stats, add departments, manage employee access.',
           ticketingRole: 'SuperAdmin',
           departmentName: 'Dev Operation'
         },
@@ -154,10 +154,10 @@ export function AuthProvider({ children }) {
           externaldev: null
         };
         const fallbackUser = {
-          id: matchedPersona.key === 'superadmin' ? 1 : matchedPersona.key === 'devops' ? 2 : matchedPersona.key === 'hrmanager' ? 3 : matchedPersona.key === 'itspecialist' ? 4 : matchedPersona.key === 'finance' ? 5 : 6,
-          firstName: parts[0] || 'Team',
-          lastName: parts[1] || 'Member',
-          middleName: '',
+          id: matchedPersona.key === 'superadmin' ? 9 : matchedPersona.key === 'devops' ? 2 : matchedPersona.key === 'hrmanager' ? 3 : matchedPersona.key === 'itspecialist' ? 4 : matchedPersona.key === 'finance' ? 5 : 6,
+          firstName: matchedPersona.key === 'superadmin' ? 'Khin Andrei' : (parts[0] || 'Team'),
+          lastName: matchedPersona.key === 'superadmin' ? 'Gamboa' : (parts[1] || 'Member'),
+          middleName: matchedPersona.key === 'superadmin' ? 'Roque' : '',
           fullName: matchedPersona.label.replace(/^[^\s]+\s+/, ''),
           workEmail: matchedPersona.email,
           jobTitle: matchedPersona.ticketingRole,
