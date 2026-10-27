@@ -69,22 +69,46 @@ module.exports = async function handler(req, res) {
   }
 
   const pool = getPool();
-  const parsedUrl = new URL(req.url, 'http://localhost');
-  let pathname = parsedUrl.pathname;
-  
-  // Normalize pathname: remove /api prefix
+
+  // Extract path from all possible sources (Vercel rewrite headers, dynamic routes, or raw URL)
+  let rawPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || req.url || '';
+  let pathname = '';
+
+  if (req.query && req.query.routes) {
+    const routeParts = Array.isArray(req.query.routes) ? req.query.routes : [req.query.routes];
+    pathname = '/' + routeParts.join('/');
+  } else if (req.query && req.query.path) {
+    const routeParts = Array.isArray(req.query.path) ? req.query.path : [req.query.path];
+    pathname = '/' + routeParts.join('/');
+  } else {
+    try {
+      const parsed = new URL(rawPath, 'http://localhost');
+      pathname = parsed.pathname;
+    } catch {
+      pathname = rawPath.split('?')[0];
+    }
+  }
+
+  // Normalize pathname: remove /api prefix if present
   if (pathname.startsWith('/api')) {
     pathname = pathname.slice(4);
   }
   if (!pathname.startsWith('/')) {
     pathname = '/' + pathname;
   }
-  // Trim trailing slash unless root
   if (pathname.length > 1 && pathname.endsWith('/')) {
     pathname = pathname.slice(0, -1);
   }
 
-  const query = Object.fromEntries(parsedUrl.searchParams);
+  // Query parameters merge
+  let urlParams = {};
+  try {
+    urlParams = Object.fromEntries(new URL(req.url, 'http://localhost').searchParams);
+  } catch {}
+  const query = { ...urlParams, ...(req.query || {}) };
+  delete query.routes;
+  delete query.path;
+
   const method = req.method.toUpperCase();
 
   try {
