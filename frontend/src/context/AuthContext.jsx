@@ -1,10 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const API_BASE = 
-  import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== 'undefined' && window.location.port === '5500'
-    ? 'http://localhost:5000/api'
-    : '/api');
+function getApiBase() {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (typeof window !== 'undefined') {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (envUrl) {
+      if (envUrl.includes('localhost') && !isLocalhost) {
+        return '/api';
+      }
+      return envUrl.replace(/\/+$/, '');
+    }
+    if (window.location.port === '5500') {
+      return 'http://localhost:5000/api';
+    }
+  }
+  return envUrl ? envUrl.replace(/\/+$/, '') : '/api';
+}
+
+const API_BASE = getApiBase();
 
 const AuthContext = createContext();
 
