@@ -7,13 +7,14 @@
     "dev": "node ../scripts/dev.js",
     "dev:portal": "npm --prefix ../apps/employee-portal run dev",
     "dev:tickets": "npm --prefix ../apps/ticketing-desk run dev",
-    "build": "npm --prefix ../apps/employee-portal run build && npm --prefix ../apps/ticketing-desk run build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "framer-motion": "^14.6.0",
     "lucide-react": "^1.61.0",
+    "pg": "^8.23.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

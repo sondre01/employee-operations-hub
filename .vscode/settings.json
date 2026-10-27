@@ -1,7 +1,6 @@
 {
   "liveServer.settings.port": 5500,
   "liveServer.settings.NoBrowser": false,
-  "dotnet.dotnetPath": "/home/sondre/.dotnet",
   "dotnet.defaultSolution": "backend/EmployeeHub.slnx",
   "dotnetAcquisitionExtension.existingDotnetPath": [
     {
@@ -12,5 +11,13 @@
       "extensionId": "ms-dotnettools.csdevkit",
       "path": "/home/sondre/.dotnet/dotnet"
     }
-  ]
+  ],
+  "dotnet.server.environmentVariables": {
+    "DOTNET_ROOT": "/home/sondre/.dotnet",
+    "PATH": "/home/sondre/.dotnet:/home/sondre/.dotnet/tools:${env:PATH}"
+  },
+  "terminal.integrated.env.linux": {
+    "DOTNET_ROOT": "/home/sondre/.dotnet",
+    "PATH": "/home/sondre/.dotnet:/home/sondre/.dotnet/tools:${env:PATH}"
+  }
 }

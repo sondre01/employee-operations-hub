@@ -9,7 +9,9 @@
     "dev:portal": "npm --prefix apps/employee-portal run dev",
     "dev:tickets": "npm --prefix apps/ticketing-desk run dev",
     "build:portal": "npm --prefix apps/employee-portal run build",
-    "build:tickets": "npm --prefix apps/ticketing-desk run build",
-    "build": "npm --prefix apps/employee-portal run build && npm --prefix apps/ticketing-desk run build"
+    "build": "npm --prefix frontend run build"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
   }
 }

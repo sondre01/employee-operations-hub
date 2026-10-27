@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -32,7 +33,6 @@ export default function AccessControlView() {
   const [formHasAccess, setFormHasAccess] = useState(false);
   const [formCanAssign, setFormCanAssign] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'edit'
 
   useEffect(() => {
@@ -43,18 +43,13 @@ export default function AccessControlView() {
     setLoading(true);
     setError('');
     try {
-      const [empRes, deptRes] = await Promise.all([
-        fetch('http://localhost:5000/api/access/employees'),
-        fetch('http://localhost:5000/api/departments')
+      const [empData, deptData] = await Promise.all([
+        apiRequest('/access/employees'),
+        apiRequest('/departments')
       ]);
 
-      if (!empRes.ok) throw new Error('Failed to load employee access roster');
-      if (!deptRes.ok) throw new Error('Failed to load departments');
-
-      const empData = await empRes.json();
-      const deptData = await deptRes.json();
-      setEmployees(empData);
-      setDepartments(deptData);
+      setEmployees(empData || []);
+      setDepartments(deptData || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -91,16 +86,10 @@ export default function AccessControlView() {
         canAssignEmployees: formCanAssign
       };
 
-      const res = await fetch(`http://localhost:5000/api/access/${editingEmp.id}`, {
+      await apiRequest(`/access/${editingEmp.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: payload
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to update employee access');
-      }
 
       setSuccess(`Permissions updated for ${editingEmp.fullName}`);
       setEditingEmp(null);

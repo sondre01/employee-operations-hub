@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: employee-hub-api
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    region: singapore
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DatabaseProvider
+        value: PostgreSql
+      - key: SUPABASE_DB_URL
+        value: Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.hynwlirtofxkqzsxotia;Password=P@55w0rdKag!()!!;SSL Mode=Require;Trust Server Certificate=true;Pooling=true;SearchPath=employee_hub,public;
