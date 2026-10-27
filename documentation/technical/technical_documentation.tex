@@ -1,0 +1,294 @@
+\documentclass[a4paper,11pt]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm,top=2.8cm,bottom=2.8cm]{geometry}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=brandblue,citecolor=brandblue,urlcolor=brandblue]{hyperref}
+
+\tcbuselibrary{skins,breakable}
+
+% --- Colors ---
+\definecolor{brandblue}{HTML}{0366D6}
+\definecolor{branddark}{HTML}{1E293B}
+\definecolor{brandgray}{HTML}{64748B}
+\definecolor{lightgray}{HTML}{F8FAFC}
+\definecolor{bordergray}{HTML}{E2E8F0}
+\definecolor{successgreen}{HTML}{28A745}
+\definecolor{warninggold}{HTML}{D97706}
+\definecolor{dangerred}{HTML}{CB2431}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{codeframe}{HTML}{CBD5E1}
+
+% --- Typography & Spacing ---
+\setlist{itemsep=3pt, topsep=4pt, parsep=0pt}
+\setlength{\headheight}{14pt}
+
+% Section Titles Styling
+\titleformat{\section}
+  {\Large\bfseries\color{branddark}}
+  {\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{brandblue}}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{branddark}}
+  {\thesubsubsection}{1em}{}
+
+% --- Headers & Footers ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{brandgray}{\footnotesize Employee Operations Hub -- Technical Documentation}}
+\fancyhead[R]{\textcolor{brandgray}{\footnotesize \leftmark}}
+\fancyfoot[C]{\textcolor{brandgray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+% --- Listings / Code Style ---
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\small\ttfamily\color{branddark},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeframe},
+  captionpos=b,
+  numbers=none,
+  tabsize=2,
+  showstringspaces=false,
+  keywordstyle=\color{brandblue}\bfseries,
+  commentstyle=\color{brandgray}\itshape,
+  stringstyle=\color{successgreen}
+}
+
+% --- Custom Callout Boxes ---
+\newtcolorbox{infobox}[1][Overview]{
+  colback=lightgray,
+  colframe=brandblue,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=2.5mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+\newtcolorbox{tipbox}[1][Helpful Tip]{
+  colback=lightgray,
+  colframe=successgreen,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=2.5mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+\newtcolorbox{warnbox}[1][Important Note]{
+  colback=lightgray,
+  colframe=warninggold,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=2.5mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+% --- Document Info ---
+\title{
+  \vspace{-1.5cm}
+  {\LARGE\textbf{\textcolor{branddark}{Enterprise Employee Operations Hub}}}\\[0.4cm]
+  {\large\textbf{\textcolor{brandblue}{System Architecture, Database Schema \& Technical Specification}}}\\[0.3cm]
+  {\small\textcolor{brandgray}{Vercel Serverless Functions $\bullet$ Supabase PostgreSQL $\bullet$ React 18 SPA $\bullet$ ASP.NET Core 8}}
+}
+\author{\textbf{Malayo Tech Architecture \& Engineering Team}}
+\date{Version 2.0 -- October 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{-0.4cm}
+\begin{center}
+\begin{minipage}{0.96\textwidth}
+\begin{infobox}[System Technical Summary]
+This document provides the definitive technical blueprint for the \textbf{Enterprise Employee Operations Hub}. It covers system architecture, database physical schemas, RESTful API contracts, role-based security enforcement, cross-border timezone mechanics, and cloud serverless deployment procedures.
+\end{infobox}
+\end{minipage}
+\end{center}
+
+\vspace{0.2cm}
+\tableofcontents
+\newpage
+
+% ==========================================
+\section{System Architecture \& Deployment Topology}
+% ==========================================
+
+The Employee Operations Hub is architected for dual-target execution:
+\begin{enumerate}
+    \item \textbf{Production Cloud Architecture (Vercel + Supabase)}:
+    \begin{itemize}
+        \item \textbf{Frontend Clients}: Two decoupled single-page applications (\texttt{apps/employee-portal} and \texttt{apps/ticketing-desk}) bundled via Vite and served from edge CDN nodes.
+        \item \textbf{Serverless API Layer}: ES-module serverless endpoints (\texttt{api/\_handler.js}) running on Vercel Node.js runtime with connection-pooled PostgreSQL queries.
+        \item \textbf{Data Persistence}: Supabase Managed PostgreSQL with automatic failover and isolated schema namespace (\texttt{employee\_hub}).
+    \end{itemize}
+    \item \textbf{Containerized / Local Architecture (Docker + ASP.NET Core 8)}:
+    \begin{itemize}
+        \item Multi-stage containerized backend with ASP.NET Core 8 Web API, Entity Framework Core 8, and Swagger OpenAPI specification.
+    \end{itemize}
+\end{enumerate}
+
+\begin{center}
+\begin{tcolorbox}[colback=white,colframe=branddark,arc=2mm,boxrule=0.8pt,width=0.98\textwidth]
+\centering
+\small
+\begin{verbatim}
++-----------------------------------------------------------------+
+|                         CLIENT LAYER                            |
+|    Employee Portal (Port 5173)    |   Service Desk (Port 5174)  |
++-----------------------------------+-----------------------------+
+                                    | HTTPS / JSON (Relative /api)
+                                    v
++-----------------------------------------------------------------+
+|                      SERVERLESS API GATEWAY                     |
+|           Vercel Node.js Functions (api/_handler.js)            |
+|       * Safe parameter validation (safeInt)                     |
+|       * Inbound email routing & synthetic ticket ingestion      |
+|       * PBKDF2 password encryption & RBAC enforcement           |
++-----------------------------------+-----------------------------+
+                                    | Pooled SSL (Port 5432)
+                                    v
++-----------------------------------------------------------------+
+|                       SUPABASE POSTGRESQL                       |
+|           Schema: employee_hub (9 Normalized Tables)            |
++-----------------------------------------------------------------+
+\end{verbatim}
+\end{tcolorbox}
+\end{center}
+
+% ==========================================
+\section{Database Physical Schema}
+% ==========================================
+
+All tables reside in the dedicated schema \texttt{employee\_hub}. The schema enforces referential integrity through foreign key cascades and uniqueness constraints.
+
+\subsection{Data Dictionary}
+
+\begin{table}[!ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries}p{3.2cm} p{2.8cm} p{3.0cm} X}
+\toprule
+Table Name & Primary Key & Foreign Keys & Purpose \\
+\midrule
+\texttt{Employees} & \texttt{Id (SERIAL)} & \texttt{DepartmentId} & Employee records, authentication hashes, and RBAC flags. \\
+\addlinespace
+\texttt{Departments} & \texttt{Id (SERIAL)} & None & Support departments and operational routing inboxes. \\
+\addlinespace
+\texttt{Tickets} & \texttt{Id (SERIAL)} & \texttt{DepartmentId, CreatedByEmployeeId, AssignedToEmployeeId} & Helpdesk service requests, queues, and status. \\
+\addlinespace
+\texttt{HardwareItems} & \texttt{Id (SERIAL)} & \texttt{AssignedToEmployeeId} & Laptop and equipment tracking with asset tags. \\
+\addlinespace
+\texttt{Holidays} & \texttt{Id (SERIAL)} & None & Cross-border Philippine and Danish public holidays. \\
+\addlinespace
+\texttt{PolicyDocuments} & \texttt{Id (SERIAL)} & None & Corporate guidelines and mandatory compliance documents. \\
+\addlinespace
+\texttt{PolicyAcknowledgements} & \texttt{(PolicyDocumentId, EmployeeId)} & Both parent tables & Audit log of employee digital signatures. \\
+\bottomrule
+\end{tabularx}
+\caption{Database Schema Overview}
+\end{table}
+
+\subsection{Key Data Integrity Rules}
+\begin{itemize}
+    \item \textbf{WorkEmail Uniqueness}: Enforced via unique B-tree index on \texttt{LOWER(WorkEmail)}.
+    \item \textbf{Safe Integer Coercion}: All integer parameters in API handlers pass through \texttt{safeInt(val)} to eliminate PostgreSQL \texttt{22P02} NaN errors.
+    \item \textbf{Connection Fallback}: Database pooler automatically detects partial hostname string truncation (e.g. from copy-paste line breaks) and falls back to verified direct poolers.
+\end{itemize}
+
+% ==========================================
+\section{REST API Contract Reference}
+% ==========================================
+
+\begin{table}[!ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries\ttfamily}p{5.5cm} p{2.2cm} X}
+\toprule
+HTTP Endpoint & Method & Description \\
+\midrule
+/api/auth/login & POST & Authenticates credentials via PBKDF2 hash verification. \\
+/api/auth/personas & GET & Returns 1-click test personas for SuperAdmin, HR, IT, and Devs. \\
+/api/employees & GET, POST & Lists employees with department joins or registers a new staff profile. \\
+/api/tickets & GET, POST & Retrieves filtered tickets or files a new support request. \\
+/api/tickets/stats & GET & Aggregates SLA metrics, resolution times, and team performance. \\
+/api/tickets/\{id\}/status & PATCH & Updates ticket lifecycle stage (\texttt{Open}, \texttt{InProgress}, \texttt{Resolved}). \\
+/api/tickets/\{id\}/assign & PATCH & Allocates ticket to an internal support specialist. \\
+/api/tickets/inbound-email & POST & Ingests external emails and auto-routes by recipient inbox. \\
+/api/tickets/sync-inbox & POST & Simulates multi-department email batch ingestion. \\
+/api/access & GET, PATCH & Queries and updates granular employee RBAC permissions. \\
+/api/hardware & GET, POST & Manages company laptop assignments and return status. \\
+/api/holidays & GET, POST & Retrieves joint Manila and Copenhagen public holiday calendar. \\
+/api/policies & GET, POST & Lists compliance documents and per-employee acknowledgement status. \\
+/api/policies/\{id\}/acknowledge & POST & Records digital signature timestamp for mandatory policies. \\
+\bottomrule
+\end{tabularx}
+\caption{REST API Specifications}
+\end{table}
+
+% ==========================================
+\section{Security Architecture \& RBAC}
+% ==========================================
+
+\subsection{Role-Based Access Levels}
+The system enforces four distinct operational roles:
+\begin{enumerate}
+    \item \textbf{SuperAdmin (Role 1)}: Absolute read/write access across all queues, audit trails, and access management. Automatically assigned to primary system administrator.
+    \item \textbf{Admin (Role 2)}: Departmental lead privileges, allowing ticket re-assignment, priority escalation, and queue management.
+    \item \textbf{Agent (Role 3)}: Operational specialists in IT, HR, or Finance with resolution capabilities on assigned tickets.
+    \item \textbf{Employee (Role 0)}: Base workforce tier. Restricted to personal profile, attendance logging, submitted tickets, and assigned hardware.
+\end{enumerate}
+
+\subsection{Credential Storage Security}
+Passwords are protected using PBKDF2 with SHA-256:
+\begin{itemize}
+    \item \textbf{Salt}: 16 cryptographically secure random bytes generated per user.
+    \item \textbf{Iterations}: 10,000 computation cycles.
+    \item \textbf{Encoding}: \texttt{\{iterations\}:\{saltHex\}:\{hashHex\}}.
+\end{itemize}
+
+% ==========================================
+\section{Cloud Deployment \& Environment Configuration}
+% ==========================================
+
+\begin{lstlisting}[language=bash,caption={Required Production Environment Variables}]
+# Supabase PostgreSQL Connection Pool URL
+SUPABASE_DB_URL=postgresql://postgres.xxx:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require
+
+# Fallback Database URL
+DATABASE_URL=postgresql://postgres.xxx:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require
+
+# Application Interconnect URLs
+VITE_TICKETING_URL=https://your-ticketing-desk.vercel.app
+VITE_PORTAL_URL=https://your-employee-portal.vercel.app
+\end{lstlisting}
+
+\begin{tipbox}[Zero-Config Client Base URL]
+The frontend API client automatically defaults to relative \texttt{'/api'} on production domains, ensuring zero CORS preflight latency and complete immunity from misconfigured environment variables.
+\end{tipbox}
+
+\end{document}

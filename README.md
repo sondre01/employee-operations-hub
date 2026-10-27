@@ -76,3 +76,21 @@ Pre-seeded testing credentials with password `Password123!`:
 - **💻 Department Specialist (IT)**: `it.specialist@company.io` — Technical support and resolution.
 - **💼 Department Specialist (Finance)**: `finance@company.io` — Financial inquiries and disbursements.
 - **👤 External Client Dedicated Developers**: `dev.arnel@company.io` / `dev.bianca@company.io` — Standard employees with Employee Portal access.
+
+---
+
+## 📚 Documentation
+
+Comprehensive documentation is organized into technical and non-technical suites, with all compiled PDFs separated in a dedicated folder:
+
+| Documentation Suite | Markdown Guide | Compiled PDF | Target Audience |
+|---|---|---|---|
+| **Technical Documentation** | [documentation/technical/TECHNICAL_DOCUMENTATION.md](documentation/technical/TECHNICAL_DOCUMENTATION.md) | [documentation/pdf/technical_documentation.pdf](documentation/pdf/technical_documentation.pdf) | Engineers, DevOps, System Architects |
+| **Non-Technical Guide** | [documentation/non-technical/NON_TECHNICAL_DOCUMENTATION.md](documentation/non-technical/NON_TECHNICAL_DOCUMENTATION.md) | [documentation/pdf/non_technical_documentation.pdf](documentation/pdf/non_technical_documentation.pdf) | Employees, HR, IT Leads, Executives |
+| **Master Operations Guide** | [documentation/README.md](documentation/README.md) | [documentation/pdf/main.pdf](documentation/pdf/main.pdf) | All Teams |
+
+To recompile all PDFs:
+```bash
+./documentation/build.sh
+```
+All compiled PDFs will be placed in `documentation/pdf/`.

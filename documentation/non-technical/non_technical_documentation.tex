@@ -1,0 +1,228 @@
+\documentclass[a4paper,11pt]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm,top=2.8cm,bottom=2.8cm]{geometry}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=brandblue,citecolor=brandblue,urlcolor=brandblue]{hyperref}
+
+\tcbuselibrary{skins,breakable}
+
+% --- Colors ---
+\definecolor{brandblue}{HTML}{0366D6}
+\definecolor{branddark}{HTML}{1E293B}
+\definecolor{brandgray}{HTML}{64748B}
+\definecolor{lightgray}{HTML}{F8FAFC}
+\definecolor{bordergray}{HTML}{E2E8F0}
+\definecolor{successgreen}{HTML}{28A745}
+\definecolor{warninggold}{HTML}{D97706}
+\definecolor{dangerred}{HTML}{CB2431}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{codeframe}{HTML}{CBD5E1}
+
+% --- Typography & Spacing ---
+\setlist{itemsep=3pt, topsep=4pt, parsep=0pt}
+\setlength{\headheight}{14pt}
+
+% Section Titles Styling
+\titleformat{\section}
+  {\Large\bfseries\color{branddark}}
+  {\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{brandblue}}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{branddark}}
+  {\thesubsubsection}{1em}{}
+
+% --- Headers & Footers ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{brandgray}{\footnotesize Employee Operations Hub -- User \& Operations Handbook}}
+\fancyhead[R]{\textcolor{brandgray}{\footnotesize \leftmark}}
+\fancyfoot[C]{\textcolor{brandgray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+% --- Custom Callout Boxes ---
+\newtcolorbox{infobox}[1][Overview]{
+  colback=lightgray,
+  colframe=brandblue,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=2.5mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+\newtcolorbox{tipbox}[1][Helpful Tip]{
+  colback=lightgray,
+  colframe=successgreen,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=2.5mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+\newtcolorbox{warnbox}[1][Important Note]{
+  colback=lightgray,
+  colframe=warninggold,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  arc=2.5mm,
+  boxrule=1pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+}
+
+% --- Document Info ---
+\title{
+  \vspace{-1.5cm}
+  {\LARGE\textbf{\textcolor{branddark}{Enterprise Employee Operations Hub}}}\\[0.4cm]
+  {\large\textbf{\textcolor{brandblue}{Plain-Language User Guide \& Operations Handbook}}}\\[0.3cm]
+  {\small\textcolor{brandgray}{Daily Workforce Hub $\bullet$ Service Desk $\bullet$ Philippines \& Denmark Operations}}
+}
+\author{\textbf{Malayo Tech People Operations Team}}
+\date{Version 2.0 -- October 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{-0.4cm}
+\begin{center}
+\begin{minipage}{0.96\textwidth}
+\begin{infobox}[Welcome to Your Operations Hub]
+The \textbf{Employee Operations Hub} is designed to make work life smoother for everyone on our cross-border teams. This handbook provides step-by-step instructions for clocking attendance, submitting IT and HR requests, checking company laptop assignments, reviewing shared holidays, and triaging support queues.
+\end{infobox}
+\end{minipage}
+\end{center}
+
+\vspace{0.2cm}
+\tableofcontents
+\newpage
+
+% ==========================================
+\section{Overview: The Two Working Areas}
+% ==========================================
+
+The platform consists of two specialized work areas:
+
+\subsection{1. The Employee Portal (For Everyone)}
+Used daily by all team members and client-dedicated engineers:
+\begin{itemize}
+    \item \textbf{Dual Digital Clocks}: Live clocks for both \textbf{Manila (PHT)} and \textbf{Copenhagen (CEST/CET)}.
+    \item \textbf{1-Click Time Clock}: Easy buttons to Clock In, start Lunch, return from Lunch, and Clock Out.
+    \item \textbf{Internal Support Tickets}: Fast submission of IT hardware, VPN, HR, and payroll requests.
+    \item \textbf{Hardware Custody}: Real-time record of company laptops and gear assigned to you.
+    \item \textbf{Policy Compliance}: Read and digitally sign company guidelines and handbooks.
+\end{itemize}
+
+\subsection{2. The Operations Service Desk (For Support Teams)}
+Accessible to authorized IT, HR, Finance, and Operations personnel:
+\begin{itemize}
+    \item \textbf{Kanban Ticket Board}: Drag-and-drop triage across Open, In Progress, and Resolved columns.
+    \item \textbf{Email Auto-Ingestion}: Routing support emails sent to department inboxes.
+    \item \textbf{Service Analytics}: Live metrics on resolution velocity, ticket volume, and SLA response times.
+    \item \textbf{Access Control (RBAC)}: Safe management of helpdesk permissions for staff members.
+\end{itemize}
+
+% ==========================================
+\section{Step-by-Step Guide for Employees}
+% ==========================================
+
+\subsection{Logging In and 1-Click Role Logins}
+\begin{enumerate}
+    \item Open the **Employee Portal** in your web browser.
+    \item Enter your corporate email and password (\texttt{Password123!}).
+    \item For testing different access tiers, use the **Quick 1-Click Role Logins** bar at the top to switch between DevOps Lead, HR Manager, IT Specialist, or Client Developer with a single click.
+\end{enumerate}
+
+\subsection{Clocking Attendance \& Meal Breaks}
+\begin{enumerate}
+    \item At the start of your shift, click the blue \textbf{Clock In} button.
+    \item When stepping away for your meal break, click \textbf{Start Lunch}.
+    \item When returning, click \textbf{End Lunch}.
+    \item At the conclusion of your shift, click \textbf{Clock Out}.
+    \item Review your past punches anytime on the \textbf{Attendance} ledger.
+\end{enumerate}
+
+\subsection{Submitting an Internal Support Ticket}
+\begin{enumerate}
+    \item Click the \textbf{Tickets} tab in the top navigation.
+    \item Click the pink \textbf{Raise Ticket} button.
+    \item Select the target department: \textit{IT Support}, \textit{Human Resources}, or \textit{Finance}.
+    \item Enter a clear title, description, and urgency level (\textit{Low}, \textit{Medium}, \textit{High}, or \textit{Critical}).
+    \item Click \textbf{Submit Ticket}. Your ticket will instantly route to the corresponding team.
+\end{enumerate}
+
+\subsection{Reviewing Assigned Hardware \& Policies}
+\begin{itemize}
+    \item View your assigned laptop model, serial number, and asset tag right on your dashboard personal card.
+    \item Navigate to \textbf{Policies} to read mandatory company guidelines and click \textbf{Acknowledge \& Sign} to digitally confirm your review.
+\end{itemize}
+
+% ==========================================
+\section{Cross-Border Operations (Philippines $\leftrightarrow$ Denmark)}
+% ==========================================
+
+\subsection{Understanding the Time Zone Golden Overlap}
+\begin{itemize}
+    \item \textbf{Manila Time (UTC+8)} is typically 6 or 7 hours ahead of \textbf{Copenhagen Time (UTC+1/UTC+2)}.
+    \item \textbf{Golden Collaboration Window}: \textbf{2:00 PM to 6:00 PM Manila Time} aligns directly with \textbf{7:00 AM to 11:00 AM Copenhagen Time}. Use this window for cross-border meetings and urgent pair programming.
+\end{itemize}
+
+\subsection{Philippine Statutory \& HR Support}
+The HR Helpdesk desk provides streamlined assistance for:
+\begin{itemize}
+    \item \textbf{BIR Form 2316}: Annual Certificate of Compensation Payment and Tax Withheld.
+    \item \textbf{Statutory Benefits}: Inquiries regarding SSS, PhilHealth, and Pag-IBIG monthly remittances and loan verifications.
+    \item \textbf{Certificate of Employment (COE)}: Rapid issuance for banking, rental, or visa applications.
+\end{itemize}
+
+% ==========================================
+\section{Pre-Configured Test Personas}
+% ==========================================
+
+\begin{table}[!ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries}p{2.6cm} >{\footnotesize\ttfamily}p{4.7cm} >{\bfseries}p{2.2cm} X}
+\toprule
+Role / Title & Login Email & Department & Operational Scope \\
+\midrule
+Super Admin & gamboa.khinandrei@gmail.com & DevOps & Unrestricted access across all portal and service desk features. \\
+\addlinespace
+DevOps Admin & devops@company.io & DevOps & Infrastructure tickets, technical escalation, and user management. \\
+\addlinespace
+HR Manager & hr.manager@company.io & HR & Statutory benefits, onboarding workflows, leave tracking. \\
+\addlinespace
+IT Specialist & it.specialist@company.io & IT Team & Hardware custody, laptop assignments, VPN access. \\
+\addlinespace
+Client Developer & dev.arnel@company.io & Client Team & Dedicated client work; personal time clock and portal only. \\
+\bottomrule
+\end{tabularx}
+\caption{Demo Accounts for System Evaluation (Password: \texttt{Password123!})}
+\end{table}
+
+\begin{tipbox}[PDF Copies Available]
+Official compiled PDF versions of this guide and the technical specifications are maintained in the \texttt{documentation/pdf/} directory.
+\end{tipbox}
+
+\end{document}
