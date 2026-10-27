@@ -46,6 +46,14 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+function safeInt(val, defaultVal = null) {
+  if (val === undefined || val === null || val === '' || val === 'undefined' || val === 'null') {
+    return defaultVal;
+  }
+  const parsed = parseInt(val, 10);
+  return Number.isFinite(parsed) ? parsed : defaultVal;
+}
+
 function verifyPassword(password, hash) {
   if (!hash) return false;
   const parts = hash.split(':');
@@ -312,7 +320,7 @@ export default async function handler(req, res) {
     // 2. TICKETS ENDPOINTS
     // ==========================================
     if (pathname === '/tickets/stats' && method === 'GET') {
-      const callerId = query.callerEmployeeId ? parseInt(query.callerEmployeeId, 10) : null;
+      const callerId = safeInt(query.callerEmployeeId);
 
       const ticketsRes = await pool.query(`
         SELECT "Id", "Status", "DepartmentId", "AssignedToEmployeeId", "CreatedByEmployeeId"
@@ -393,25 +401,27 @@ export default async function handler(req, res) {
 
       // Caller isolation
       if (query.callerEmployeeId) {
-        const callerId = parseInt(query.callerEmployeeId, 10);
-        const callerRes = await pool.query(`SELECT * FROM employee_hub."Employees" WHERE "Id" = $1`, [callerId]);
-        if (callerRes.rows.length > 0) {
-          const caller = callerRes.rows[0];
-          const isSuperAdmin = (caller.WorkEmail || '').toLowerCase().trim() === 'gamboa.khinandrei@gmail.com' || caller.TicketingRole === 1;
-          if (!isSuperAdmin) {
-            if (caller.DepartmentId) {
-              values.push(caller.DepartmentId);
-              conditions.push(`t."DepartmentId" = $${values.length}`);
-            } else {
-              values.push(caller.Id);
-              conditions.push(`(t."CreatedByEmployeeId" = $${values.length} OR t."AssignedToEmployeeId" = $${values.length})`);
+        const callerId = safeInt(query.callerEmployeeId);
+        if (callerId !== null) {
+          const callerRes = await pool.query(`SELECT * FROM employee_hub."Employees" WHERE "Id" = $1`, [callerId]);
+          if (callerRes.rows.length > 0) {
+            const caller = callerRes.rows[0];
+            const isSuperAdmin = (caller.WorkEmail || '').toLowerCase().trim() === 'gamboa.khinandrei@gmail.com' || caller.TicketingRole === 1;
+            if (!isSuperAdmin) {
+              if (caller.DepartmentId) {
+                values.push(caller.DepartmentId);
+                conditions.push(`t."DepartmentId" = $${values.length}`);
+              } else {
+                values.push(caller.Id);
+                conditions.push(`(t."CreatedByEmployeeId" = $${values.length} OR t."AssignedToEmployeeId" = $${values.length})`);
+              }
             }
           }
         }
       }
 
       if (query.queue) {
-        const qVal = QUEUE_NUM[query.queue] || parseInt(query.queue, 10);
+        const qVal = QUEUE_NUM[query.queue] || safeInt(query.queue);
         if (qVal) {
           values.push(qVal);
           conditions.push(`t."Queue" = $${values.length}`);
@@ -419,25 +429,28 @@ export default async function handler(req, res) {
       }
 
       if (query.status) {
-        const sVal = STATUS_NUM[query.status] || parseInt(query.status, 10);
+        const sVal = STATUS_NUM[query.status] || safeInt(query.status);
         if (sVal) {
           values.push(sVal);
           conditions.push(`t."Status" = $${values.length}`);
         }
       }
 
-      if (query.departmentId) {
-        values.push(parseInt(query.departmentId, 10));
+      const deptId = safeInt(query.departmentId);
+      if (deptId !== null) {
+        values.push(deptId);
         conditions.push(`t."DepartmentId" = $${values.length}`);
       }
 
-      if (query.createdByEmployeeId) {
-        values.push(parseInt(query.createdByEmployeeId, 10));
+      const creatorId = safeInt(query.createdByEmployeeId);
+      if (creatorId !== null) {
+        values.push(creatorId);
         conditions.push(`t."CreatedByEmployeeId" = $${values.length}`);
       }
 
-      if (query.assignedToEmployeeId) {
-        values.push(parseInt(query.assignedToEmployeeId, 10));
+      const assignedId = safeInt(query.assignedToEmployeeId);
+      if (assignedId !== null) {
+        values.push(assignedId);
         conditions.push(`t."AssignedToEmployeeId" = $${values.length}`);
       }
 
@@ -494,9 +507,9 @@ export default async function handler(req, res) {
         return sendJson(res, 400, { message: 'Title and description are required.' });
       }
 
-      const qVal = QUEUE_NUM[body.queue] || parseInt(body.queue, 10) || 1;
-      const deptId = body.departmentId ? parseInt(body.departmentId, 10) : null;
-      const creatorId = body.createdByEmployeeId ? parseInt(body.createdByEmployeeId, 10) : 1;
+      const qVal = QUEUE_NUM[body.queue] || safeInt(body.queue, 1);
+      const deptId = safeInt(body.departmentId);
+      const creatorId = safeInt(body.createdByEmployeeId, 1);
 
       const insertRes = await pool.query(`
         INSERT INTO employee_hub."Tickets" (
@@ -549,10 +562,10 @@ export default async function handler(req, res) {
     // PATCH /tickets/:id/status
     const statusMatch = pathname.match(/^\/tickets\/(\d+)\/status$/);
     if (statusMatch && method === 'PATCH') {
-      const id = parseInt(statusMatch[1], 10);
+      const id = safeInt(statusMatch[1]);
       const body = await parseBody(req);
-      const sVal = STATUS_NUM[body.status] || parseInt(body.status, 10) || 1;
-      const resolverId = body.assignedToEmployeeId ? parseInt(body.assignedToEmployeeId, 10) : null;
+      const sVal = STATUS_NUM[body.status] || safeInt(body.status, 1);
+      const resolverId = safeInt(body.assignedToEmployeeId);
       const notes = body.resolutionNotes ? body.resolutionNotes.trim() : null;
 
       let updateSql = `UPDATE employee_hub."Tickets" SET "Status" = $1, "UpdatedAtUtc" = NOW()`;
@@ -608,9 +621,9 @@ export default async function handler(req, res) {
     // PATCH /tickets/:id/assign
     const assignMatch = pathname.match(/^\/tickets\/(\d+)\/assign$/);
     if (assignMatch && method === 'PATCH') {
-      const id = parseInt(assignMatch[1], 10);
+      const id = safeInt(assignMatch[1]);
       const body = await parseBody(req);
-      const resolverId = body.assignedToEmployeeId ? parseInt(body.assignedToEmployeeId, 10) : null;
+      const resolverId = safeInt(body.assignedToEmployeeId);
 
       if (!resolverId || resolverId <= 0) {
         await pool.query(`
@@ -667,7 +680,7 @@ export default async function handler(req, res) {
     // GET or DELETE /tickets/:id
     const singleTicketMatch = pathname.match(/^\/tickets\/(\d+)$/);
     if (singleTicketMatch) {
-      const id = parseInt(singleTicketMatch[1], 10);
+      const id = safeInt(singleTicketMatch[1]);
       if (method === 'GET') {
         const detailRes = await pool.query(`
           SELECT 
@@ -815,7 +828,7 @@ export default async function handler(req, res) {
 
     const deptMatch = pathname.match(/^\/departments\/(\d+)$/);
     if (deptMatch) {
-      const id = parseInt(deptMatch[1], 10);
+      const id = safeInt(deptMatch[1]);
       if (method === 'PATCH' || method === 'PUT') {
         const body = await parseBody(req);
         const up = await pool.query(`
@@ -880,11 +893,11 @@ export default async function handler(req, res) {
 
     const accessMatch = pathname.match(/^\/access\/(\d+)$/);
     if (accessMatch && method === 'PATCH') {
-      const id = parseInt(accessMatch[1], 10);
+      const id = safeInt(accessMatch[1]);
       const body = await parseBody(req);
       const tRole = TICKETING_ROLE_NUM[body.ticketingRole] !== undefined
         ? TICKETING_ROLE_NUM[body.ticketingRole]
-        : (parseInt(body.ticketingRole, 10) || 0);
+        : safeInt(body.ticketingRole, 0);
 
       const hasAccess = (tRole === 1 || tRole === 2) ? true : Boolean(body.hasTicketingAccess);
 
@@ -898,7 +911,7 @@ export default async function handler(req, res) {
         WHERE "Id" = $6
         RETURNING *
       `, [
-        body.departmentId ? parseInt(body.departmentId, 10) : null,
+        safeInt(body.departmentId),
         Boolean(body.isInternal),
         tRole,
         hasAccess,
@@ -966,7 +979,7 @@ export default async function handler(req, res) {
 
     const empDetailMatch = pathname.match(/^\/employees\/(\d+)$/);
     if (empDetailMatch && method === 'GET') {
-      const id = parseInt(empDetailMatch[1], 10);
+      const id = safeInt(empDetailMatch[1]);
       const eRes = await pool.query(`SELECT * FROM employee_hub."Employees" WHERE "Id" = $1`, [id]);
       if (eRes.rows.length === 0) return sendJson(res, 404, { message: 'Employee not found.' });
       const emp = eRes.rows[0];
@@ -1061,7 +1074,7 @@ export default async function handler(req, res) {
 
     const hardMatch = pathname.match(/^\/hardware\/(\d+)$/);
     if (hardMatch && method === 'DELETE') {
-      await pool.query(`DELETE FROM employee_hub."HardwareItems" WHERE "Id" = $1`, [parseInt(hardMatch[1], 10)]);
+      await pool.query(`DELETE FROM employee_hub."HardwareItems" WHERE "Id" = $1`, [safeInt(hardMatch[1])]);
       res.statusCode = 204;
       return res.end();
     }
@@ -1089,7 +1102,7 @@ export default async function handler(req, res) {
 
     if (pathname === '/holidays' && method === 'POST') {
       const body = await parseBody(req);
-      const cVal = COUNTRY_NUM[body.country] || parseInt(body.country, 10) || 1;
+      const cVal = COUNTRY_NUM[body.country] || safeInt(body.country, 1);
       const ins = await pool.query(`
         INSERT INTO employee_hub."Holidays" ("Title", "HolidayDate", "Country", "IsWorkingDay", "Notes")
         VALUES ($1, $2, $3, $4, $5)
@@ -1114,7 +1127,7 @@ export default async function handler(req, res) {
 
     const holMatch = pathname.match(/^\/holidays\/(\d+)$/);
     if (holMatch && method === 'DELETE') {
-      await pool.query(`DELETE FROM employee_hub."Holidays" WHERE "Id" = $1`, [parseInt(holMatch[1], 10)]);
+      await pool.query(`DELETE FROM employee_hub."Holidays" WHERE "Id" = $1`, [safeInt(holMatch[1])]);
       res.statusCode = 204;
       return res.end();
     }
@@ -1123,7 +1136,7 @@ export default async function handler(req, res) {
     // 8. POLICIES ENDPOINTS
     // ==========================================
     if (pathname === '/policies' && method === 'GET') {
-      const empId = query.employeeId ? parseInt(query.employeeId, 10) : null;
+      const empId = safeInt(query.employeeId);
       const polRes = await pool.query(`
         SELECT 
           p."Id" AS id,
@@ -1146,9 +1159,9 @@ export default async function handler(req, res) {
 
     const ackMatch = pathname.match(/^\/policies\/(\d+)\/acknowledge$/);
     if (ackMatch && method === 'POST') {
-      const polId = parseInt(ackMatch[1], 10);
+      const polId = safeInt(ackMatch[1]);
       const body = await parseBody(req);
-      const empId = body.employeeId;
+      const empId = safeInt(body.employeeId);
 
       await pool.query(`
         INSERT INTO employee_hub."PolicyAcknowledgements" ("PolicyDocumentId", "EmployeeId", "AcknowledgedAtUtc")
@@ -1161,7 +1174,7 @@ export default async function handler(req, res) {
 
     const polMatch = pathname.match(/^\/policies\/(\d+)$/);
     if (polMatch && method === 'DELETE') {
-      await pool.query(`DELETE FROM employee_hub."PolicyDocuments" WHERE "Id" = $1`, [parseInt(polMatch[1], 10)]);
+      await pool.query(`DELETE FROM employee_hub."PolicyDocuments" WHERE "Id" = $1`, [safeInt(polMatch[1])]);
       res.statusCode = 204;
       return res.end();
     }

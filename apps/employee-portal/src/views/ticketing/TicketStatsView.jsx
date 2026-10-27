@@ -25,7 +25,8 @@ export default function TicketStatsView() {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiRequest(`/tickets/stats?callerEmployeeId=${currentUser.id}`);
+        const statsUrl = currentUser?.id ? `/tickets/stats?callerEmployeeId=${currentUser.id}` : '/tickets/stats';
+        const data = await apiRequest(statsUrl);
         setStats(data);
       } catch (err) {
         setError(err.message);
@@ -34,7 +35,7 @@ export default function TicketStatsView() {
       }
     };
     fetchStats();
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   if (loading) {
     return (

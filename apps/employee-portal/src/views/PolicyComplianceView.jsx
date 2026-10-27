@@ -37,7 +37,9 @@ export default function PolicyComplianceView() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiRequest(`/policies?employeeId=${currentPersona?.id || currentUser?.id}`);
+      const empId = currentPersona?.id || currentUser?.id;
+      const endpoint = empId ? `/policies?employeeId=${empId}` : '/policies';
+      const data = await apiRequest(endpoint);
       setPolicies(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
@@ -52,10 +54,15 @@ export default function PolicyComplianceView() {
 
   const handleAcknowledge = async (policyId) => {
     try {
+      const empId = currentPersona?.id || currentUser?.id;
+      if (!empId) {
+        alert('Please log in or select an employee persona to acknowledge policies.');
+        return;
+      }
       await apiRequest(`/policies/${policyId}/acknowledge`, {
         method: 'POST',
         body: {
-          employeeId: currentPersona?.id || currentUser?.id,
+          employeeId: empId,
         },
       });
       fetchPolicies();

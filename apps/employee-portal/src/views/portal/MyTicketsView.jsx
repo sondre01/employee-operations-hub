@@ -51,8 +51,9 @@ export default function MyTicketsView() {
     setLoading(true);
     setError(null);
     try {
+      const ticketsUrl = currentUser?.id ? `/tickets?createdByEmployeeId=${currentUser.id}` : '/tickets';
       const [ticketList, deptList] = await Promise.all([
-        apiRequest(`/tickets?createdByEmployeeId=${currentUser.id}`),
+        apiRequest(ticketsUrl),
         apiRequest('/departments'),
       ]);
       setTickets(Array.isArray(ticketList) ? ticketList : []);
@@ -69,7 +70,7 @@ export default function MyTicketsView() {
 
   useEffect(() => {
     fetchData();
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -90,7 +91,7 @@ export default function MyTicketsView() {
           priority: formData.priority,
           departmentId: formData.departmentId ? parseInt(formData.departmentId, 10) : null,
           queue: 1,
-          createdByEmployeeId: currentUser.id,
+          createdByEmployeeId: currentUser?.id || 1,
         },
       });
 
