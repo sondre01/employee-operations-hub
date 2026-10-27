@@ -1,5 +1,5 @@
-const { getPool } = require('./_db');
-const crypto = require('crypto');
+import { getPool } from './_db.js';
+import crypto from 'crypto';
 
 // Enums
 const STATUS_NUM = { Open: 1, InProgress: 2, Resolved: 3 };
@@ -56,7 +56,7 @@ function verifyPassword(password, hash) {
   return crypto.timingSafeEqual(expectedHash, testHash);
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -70,22 +70,23 @@ module.exports = async function handler(req, res) {
 
   const pool = getPool();
 
-  // Extract path from all possible sources (Vercel rewrite headers, dynamic routes, or raw URL)
-  let rawPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || req.url || '';
+  // Extract path from req.url
   let pathname = '';
+  try {
+    const parsed = new URL(req.url || '/', 'http://localhost');
+    pathname = parsed.pathname;
+  } catch {
+    pathname = (req.url || '').split('?')[0];
+  }
 
-  if (req.query && req.query.routes) {
-    const routeParts = Array.isArray(req.query.routes) ? req.query.routes : [req.query.routes];
-    pathname = '/' + routeParts.join('/');
-  } else if (req.query && req.query.path) {
-    const routeParts = Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-    pathname = '/' + routeParts.join('/');
-  } else {
-    try {
-      const parsed = new URL(rawPath, 'http://localhost');
-      pathname = parsed.pathname;
-    } catch {
-      pathname = rawPath.split('?')[0];
+  // Fallback for Vercel dynamic splat routes if req.query is present
+  if ((!pathname || pathname === '/' || pathname === '/index' || pathname === '/api/index') && req.query) {
+    if (req.query.routes) {
+      const routeParts = Array.isArray(req.query.routes) ? req.query.routes : [req.query.routes];
+      pathname = '/' + routeParts.join('/');
+    } else if (req.query.path) {
+      const routeParts = Array.isArray(req.query.path) ? req.query.path : [req.query.path];
+      pathname = '/' + routeParts.join('/');
     }
   }
 
@@ -103,7 +104,7 @@ module.exports = async function handler(req, res) {
   // Query parameters merge
   let urlParams = {};
   try {
-    urlParams = Object.fromEntries(new URL(req.url, 'http://localhost').searchParams);
+    urlParams = Object.fromEntries(new URL(req.url || '/', 'http://localhost').searchParams);
   } catch {}
   const query = { ...urlParams, ...(req.query || {}) };
   delete query.routes;
@@ -112,6 +113,26 @@ module.exports = async function handler(req, res) {
   const method = req.method.toUpperCase();
 
   try {
+    // Health / Diagnostics endpoint
+    if (pathname === '/health' && method === 'GET') {
+      try {
+        const testRes = await pool.query('SELECT COUNT(*) FROM employee_hub."Tickets"');
+        return sendJson(res, 200, {
+          status: 'ok',
+          database: 'connected',
+          ticketsCount: parseInt(testRes.rows[0].count, 10),
+          envConfigured: Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL)
+        });
+      } catch (dbErr) {
+        return sendJson(res, 500, {
+          status: 'error',
+          database: 'connection_failed',
+          error: dbErr.message,
+          envConfigured: Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL)
+        });
+      }
+    }
+
     // ==========================================
     // 1. AUTH ENDPOINTS
     // ==========================================
@@ -1152,4 +1173,5 @@ module.exports = async function handler(req, res) {
     console.error('API Error:', err);
     return sendJson(res, 500, { message: err.message || 'Internal server error' });
   }
-};
+}
+

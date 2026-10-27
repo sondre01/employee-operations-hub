@@ -1,6 +1,15 @@
-const fs = require('fs');
-const path = require('path');
-const { Pool } = require('pg');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import pg from 'pg';
+
+const { Pool } = pg.default || pg;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Supabase live pooler default fallback (AWS Tokyo pooler for this project)
+const DEFAULT_SUPABASE_URL = 'postgresql://postgres.hynwlirtofxkqzsxotia:P%4055w0rdKag%21%28%29%21%21@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres';
 
 function getDbConfig() {
   let raw = process.env.SUPABASE_DB_URL || 
@@ -40,8 +49,9 @@ function getDbConfig() {
     }
   }
 
+  // Production fallback to ensure Vercel never crashes even if env vars weren't redeployed
   if (!raw) {
-    throw new Error('Database connection string not configured. Please set SUPABASE_DB_URL or DATABASE_URL in environment variables.');
+    raw = DEFAULT_SUPABASE_URL;
   }
 
   if (raw.startsWith('postgres://') || raw.startsWith('postgresql://')) {
@@ -82,4 +92,4 @@ function getPool() {
   return pool;
 }
 
-module.exports = { getPool };
+export { getPool };

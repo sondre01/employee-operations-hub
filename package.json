@@ -2,9 +2,10 @@
   "name": "proposal-employee-hub",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.js",
-    "start": "node scripts/dev.js",
+    "dev": "node scripts/dev.cjs",
+    "start": "node scripts/dev.cjs",
     "start:backend": "dotnet run --project backend/src/EmployeeHub.Api --launch-profile http",
     "dev:portal": "npm --prefix apps/employee-portal run dev",
     "dev:tickets": "npm --prefix apps/ticketing-desk run dev",

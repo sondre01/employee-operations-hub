@@ -1,15 +1,30 @@
 // Pure, vanilla fetch wrapper for API communication
-// 1. If VITE_API_BASE_URL is provided in environment (e.g. on Vercel), use that.
+// 1. If VITE_API_BASE_URL is provided in environment, use that (unless pointing to localhost in production).
 // 2. If running statically via VS Code Live Server (port 5500), fall back to localhost:5000.
 // 3. Otherwise default to '/api' (used by Vite dev proxy, Docker Nginx proxy, or Vercel rewrites).
-const API_BASE = 
-  import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== 'undefined' && window.location.port === '5500'
-    ? 'http://localhost:5000/api'
-    : '/api');
+function getApiBase() {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (typeof window !== 'undefined') {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // If VITE_API_BASE_URL points to localhost, but we are running on Vercel or a remote domain, ignore localhost and use /api
+    if (envUrl) {
+      if (envUrl.includes('localhost') && !isLocalhost) {
+        return '/api';
+      }
+      return envUrl.replace(/\/+$/, '');
+    }
+    if (window.location.port === '5500') {
+      return 'http://localhost:5000/api';
+    }
+  }
+  return envUrl ? envUrl.replace(/\/+$/, '') : '/api';
+}
+
+const API_BASE = getApiBase();
 
 export async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE}${normalizedEndpoint}`;
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -34,6 +49,7 @@ export async function apiRequest(endpoint, options = {}) {
     } catch {
       // response was not JSON
     }
+    console.error(`API Request failed [${options.method || 'GET'} ${url}]:`, errorMessage);
     throw new Error(errorMessage);
   }
 

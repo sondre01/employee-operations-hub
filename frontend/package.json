@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node ../scripts/dev.js",
+    "dev": "node ../scripts/dev.cjs",
     "dev:portal": "npm --prefix ../apps/employee-portal run dev",
     "dev:tickets": "npm --prefix ../apps/ticketing-desk run dev",
     "build": "vite build",

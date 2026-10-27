@@ -1,1 +1,1 @@
-module.exports = require('./_handler');
+export { default } from './_handler.js';
