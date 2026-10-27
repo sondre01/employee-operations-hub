@@ -38,7 +38,7 @@ export default function PolicyComplianceView() {
     setError(null);
     try {
       const data = await apiRequest(`/policies?employeeId=${currentPersona?.id || currentUser?.id}`);
-      setPolicies(data);
+      setPolicies(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     } finally {

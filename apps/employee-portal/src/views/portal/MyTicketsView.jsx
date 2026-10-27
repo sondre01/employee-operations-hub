@@ -55,9 +55,9 @@ export default function MyTicketsView() {
         apiRequest(`/tickets?createdByEmployeeId=${currentUser.id}`),
         apiRequest('/departments'),
       ]);
-      setTickets(ticketList);
-      setDepartments(deptList);
-      if (deptList.length > 0 && !formData.departmentId) {
+      setTickets(Array.isArray(ticketList) ? ticketList : []);
+      setDepartments(Array.isArray(deptList) ? deptList : []);
+      if (Array.isArray(deptList) && deptList.length > 0 && !formData.departmentId) {
         setFormData((prev) => ({ ...prev, departmentId: deptList[0].id }));
       }
     } catch (err) {

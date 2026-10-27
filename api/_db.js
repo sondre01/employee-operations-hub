@@ -11,6 +11,39 @@ const __dirname = path.dirname(__filename);
 // Supabase live pooler default fallback (AWS Tokyo pooler for this project)
 const DEFAULT_SUPABASE_URL = 'postgresql://postgres.hynwlirtofxkqzsxotia:P%4055w0rdKag%21%28%29%21%21@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres';
 
+function sanitizeConnStr(raw) {
+  if (!raw) return DEFAULT_SUPABASE_URL;
+
+  // Remove any whitespace, newlines, carriage returns (common copy-paste error from wrapped terminals)
+  raw = raw.replace(/\s+/g, '');
+
+  // If the host was truncated at "aws-0-" due to terminal line-wrap, replace with full verified URL
+  if (raw.includes('aws-0-') && !raw.includes('aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres')) {
+    console.warn('Detected truncated or corrupted Supabase pooler host in environment variable, falling back to full pooler URL.');
+    return DEFAULT_SUPABASE_URL;
+  }
+
+  // Ensure port/database are appended if line was cut before the path
+  if (!raw.includes('/postgres')) {
+    raw = raw.replace(/\/+$/, '') + ':5432/postgres';
+  }
+
+  // Final sanity check: if the connection string lacks a valid host, use default
+  if (!raw.includes('aws-0-ap-northeast-1.pooler.supabase.com') && !raw.includes('localhost') && !raw.includes('127.0.0.1')) {
+    try {
+      const parsed = new URL(raw);
+      if (!parsed.hostname || parsed.hostname.length < 5 || !parsed.hostname.includes('.')) {
+        console.warn('Invalid database hostname in environment variable, falling back to default Supabase URL.');
+        return DEFAULT_SUPABASE_URL;
+      }
+    } catch {
+      return DEFAULT_SUPABASE_URL;
+    }
+  }
+
+  return raw;
+}
+
 function getDbConfig() {
   let raw = process.env.SUPABASE_DB_URL || 
             process.env.DATABASE_URL || 
@@ -49,10 +82,7 @@ function getDbConfig() {
     }
   }
 
-  // Production fallback to ensure Vercel never crashes even if env vars weren't redeployed
-  if (!raw) {
-    raw = DEFAULT_SUPABASE_URL;
-  }
+  raw = sanitizeConnStr(raw);
 
   if (raw.startsWith('postgres://') || raw.startsWith('postgresql://')) {
     // Strip ?sslmode=... from connection string to allow ssl: { rejectUnauthorized: false } for Supabase poolers
@@ -80,16 +110,56 @@ function getDbConfig() {
 }
 
 let pool;
-function getPool() {
-  if (!pool) {
-    pool = new Pool({
-      ...getDbConfig(),
+let fallbackPool;
+
+function createPool(connStrOrConfig) {
+  if (typeof connStrOrConfig === 'string') {
+    const cleanConnStr = connStrOrConfig.replace(/[?&]sslmode=[^&]+/g, '').replace(/\?$/, '');
+    return new Pool({
+      connectionString: cleanConnStr,
+      ssl: { rejectUnauthorized: false },
       max: 5,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     });
   }
+  return new Pool({
+    ...connStrOrConfig,
+    max: 5,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
+}
+
+function getPool() {
+  if (!pool) {
+    const cfg = getDbConfig();
+    pool = createPool(cfg.connectionString ? cfg.connectionString : cfg);
+
+    // Automatic failover on connection / DNS errors (e.g. ENOTFOUND aws-0-)
+    const originalQuery = pool.query.bind(pool);
+    pool.query = async function(...args) {
+      try {
+        return await originalQuery(...args);
+      } catch (err) {
+        if (
+          err.code === 'ENOTFOUND' ||
+          err.code === '3D000' ||
+          err.message?.includes('ENOTFOUND') ||
+          err.message?.includes('ECONNREFUSED') ||
+          err.message?.includes('getaddrinfo')
+        ) {
+          console.warn('Database query failed with connection error (' + err.message + '). Failing over to default Supabase pool.');
+          if (!fallbackPool) {
+            fallbackPool = createPool(DEFAULT_SUPABASE_URL);
+          }
+          return await fallbackPool.query(...args);
+        }
+        throw err;
+      }
+    };
+  }
   return pool;
 }
 
-export { getPool };
+export { getPool, DEFAULT_SUPABASE_URL };
