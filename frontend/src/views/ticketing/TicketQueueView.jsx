@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Kanban,
   List,
@@ -8,7 +9,16 @@ import {
   X,
   RefreshCw,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Mail,
+  Send,
+  CheckCircle2,
+  Sparkles,
+  Eye,
+  Clock,
+  User,
+  Building2,
+  Check
 } from 'lucide-react';
 
 const COLUMNS = [
@@ -25,8 +35,32 @@ export default function TicketQueueView() {
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Department filter state: defaults to all departments for global visibility
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState('all');
+
+  // Inbound Email Simulator state
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [simForm, setSimForm] = useState({
+    fromName: 'Khin Andrei Gamboa',
+    fromEmail: 'gamboa.khinandrei@gmail.com',
+    toEmail: 'it-support@company.io',
+    subject: 'Workstation power supply failure after storm',
+    body: 'Hi IT team, my secondary monitor and desktop power unit will not turn on today. Can an IT specialist check this or issue a temporary replacement unit? Thanks!'
+  });
+  const [simLoading, setSimLoading] = useState(false);
+  const [simResult, setSimResult] = useState(null);
+  const [simError, setSimError] = useState(null);
+
+  // Ticket Detail & Message Inspection Modal state
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedTicketCol, setSelectedTicketCol] = useState('Open');
+  const [selectedTicketAssigneeId, setSelectedTicketAssigneeId] = useState('');
+  const [modalResolutionNotes, setModalResolutionNotes] = useState('');
+  const [modalSaving, setModalSaving] = useState(false);
 
   // View state: 'board' | 'list'
   const [viewMode, setViewMode] = useState('board');
@@ -50,14 +84,23 @@ export default function TicketQueueView() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch access employees first (which includes departmentId & departmentName)
-      const [ticketList, accessEmpList] = await Promise.all([
-        apiRequest('/tickets'),
+      // Fetch tickets, access employees, and departments
+      const callerParam = currentUser?.id ? `?callerEmployeeId=${currentUser.id}` : '';
+      const [ticketList, accessEmpList, deptList] = await Promise.all([
+        apiRequest(`/tickets${callerParam}`),
         apiRequest('/access/employees').catch(() => apiRequest('/employees')),
+        apiRequest('/departments').catch(() => []),
       ]);
 
       setTickets(ticketList || []);
       setEmployees((accessEmpList || []).filter((e) => e.isInternal));
+      setDepartments(deptList || []);
+      if (deptList?.length > 0 && !simForm.toEmail) {
+        setSimForm((prev) => ({
+          ...prev,
+          toEmail: deptList[0].supportEmail || 'it-support@company.io'
+        }));
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,9 +108,72 @@ export default function TicketQueueView() {
     }
   };
 
+  const handleSimulateInboundEmail = async (e) => {
+    e.preventDefault();
+    setSimLoading(true);
+    setSimError(null);
+    setSimResult(null);
+    try {
+      const res = await apiRequest('/tickets/inbound-email', {
+        method: 'POST',
+        body: simForm
+      });
+      setSimResult(res);
+      fetchData(); // Immediately refresh Kanban tickets
+    } catch (err) {
+      setSimError(err.message || 'Failed to process inbound email.');
+    } finally {
+      setSimLoading(false);
+    }
+  };
+
+  const applyPreset = (preset) => {
+    setSimResult(null);
+    setSimError(null);
+    if (preset === 'it') {
+      setSimForm({
+        fromName: 'Khin Andrei Gamboa',
+        fromEmail: 'gamboa.khinandrei@gmail.com',
+        toEmail: 'it-support@company.io',
+        subject: 'VPN Connection drops intermittently on remote shift',
+        body: 'Hello IT team, my OpenVPN client disconnects every 15 minutes during the afternoon sprint. Could you review my routing logs?'
+      });
+    } else if (preset === 'hr') {
+      setSimForm({
+        fromName: 'Jessica Alcantara',
+        fromEmail: 'jessica.alcantara@gmail.com',
+        toEmail: 'hr-support@company.io',
+        subject: 'Request for Certificate of Employment (COE) with Compensation',
+        body: 'Hi HR team, I need a signed Certificate of Employment stating my compensation breakdown for my home loan bank application. Thank you!'
+      });
+    } else if (preset === 'devops') {
+      setSimForm({
+        fromName: 'Bianca Mendoza',
+        fromEmail: 'dev.bianca@company.io',
+        toEmail: 'gamboa.khinandrei+devops@gmail.com',
+        subject: 'Kubernetes staging namespace rollout failure',
+        body: 'Hi Khin Andrei & DevOps team, our latest build helm deployment to staging-alpha failed with CrashLoopBackOff on pod container restart. Please inspect.'
+      });
+    } else if (preset === 'finance') {
+      setSimForm({
+        fromName: 'Arnel Bautista',
+        fromEmail: 'arnel.bautista@gmail.com',
+        toEmail: 'finance-support@company.io',
+        subject: 'Travel allowance reimbursement claim inquiry',
+        body: 'Hi Finance, attached are receipts for client on-site visit expenses last Thursday. Kindly confirm if processing will be included in the upcoming cut-off.'
+      });
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (currentUser?.departmentId) {
+      setSelectedDeptFilter(currentUser.departmentId.toString());
+    }
+  }, [currentUser?.departmentId]);
 
   // Determine which column a ticket belongs to
   const getTicketColumn = (ticket) => {
@@ -228,6 +334,47 @@ export default function TicketQueueView() {
     }
   };
 
+  const handleOpenTicketModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setSelectedTicketCol(getTicketColumn(ticket));
+    setSelectedTicketAssigneeId(ticket.assignedToEmployeeId ? ticket.assignedToEmployeeId.toString() : '');
+    setModalResolutionNotes(ticket.resolutionNotes || '');
+  };
+
+  const handleSaveModalTicket = async () => {
+    if (!selectedTicket) return;
+    setModalSaving(true);
+    try {
+      const backendStatus = mapColumnToBackendStatus(selectedTicketCol);
+      const newAssigneeId = selectedTicketAssigneeId ? parseInt(selectedTicketAssigneeId, 10) : null;
+
+      await apiRequest(`/tickets/${selectedTicket.id}/status`, {
+        method: 'PATCH',
+        body: {
+          status: backendStatus,
+          assignedToEmployeeId: newAssigneeId,
+          resolutionNotes: modalResolutionNotes || null,
+        },
+      });
+
+      // Update local columns map
+      const updatedMap = { ...ticketColumns, [selectedTicket.id]: selectedTicketCol };
+      setTicketColumns(updatedMap);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedMap));
+      } catch (e) {
+        console.warn('Could not save to localStorage', e);
+      }
+
+      await fetchData();
+      setSelectedTicket(null);
+    } catch (err) {
+      alert(`Failed to update ticket: ${err.message}`);
+    } finally {
+      setModalSaving(false);
+    }
+  };
+
   // Drag event handlers
   const handleDragStart = (e, ticketId) => {
     e.dataTransfer.setData('text/plain', ticketId.toString());
@@ -266,11 +413,17 @@ export default function TicketQueueView() {
     setDragOverCol(null);
   };
 
-  // Filter tickets by real-time search query
+  // Filter tickets by department queue isolation and real-time search query
   const filteredTickets = useMemo(() => {
-    if (!searchQuery.trim()) return tickets;
-    const q = searchQuery.toLowerCase().trim();
     return tickets.filter((t) => {
+      // Department Queue Isolation (Super Admin focuses on Dev Operation)
+      if (selectedDeptFilter !== 'all') {
+        const targetDeptId = parseInt(selectedDeptFilter, 10);
+        if (t.departmentId !== targetDeptId) return false;
+      }
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
       const idStr = t.id.toString();
       const title = (t.title || '').toLowerCase();
       const requester = (t.createdByEmployeeName || '').toLowerCase();
@@ -288,7 +441,7 @@ export default function TicketQueueView() {
         assignee.includes(q)
       );
     });
-  }, [tickets, searchQuery]);
+  }, [tickets, searchQuery, selectedDeptFilter]);
 
   return (
     <div className="h-full w-full flex-1 min-h-0 flex flex-col gap-3 font-sans select-none overflow-hidden">
@@ -365,6 +518,17 @@ export default function TicketQueueView() {
             </button>
           </div>
 
+          {/* Inbound Email Simulator Button */}
+          <button
+            type="button"
+            onClick={() => setSimulatorOpen(true)}
+            title="Simulate employee email to department inbox"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-[#13264C] shadow-2xs cursor-pointer transition-all"
+          >
+            <Mail className="w-3.5 h-3.5 text-[#D61766]" />
+            <span className="hidden sm:inline">Inbound Email Simulator</span>
+          </button>
+
           <button
             type="button"
             onClick={fetchData}
@@ -374,6 +538,58 @@ export default function TicketQueueView() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#13264C]' : ''}`} />
           </button>
         </div>
+      </div>
+
+      {/* Department Focus & Queue Isolation Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 shrink-0 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setSelectedDeptFilter('all')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+            selectedDeptFilter === 'all'
+              ? 'bg-[#13264C] text-white shadow-2xs'
+              : 'bg-white hover:bg-zinc-100/80 text-zinc-600 border border-zinc-200/80'
+          }`}
+        >
+          <span>All Departments</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+            selectedDeptFilter === 'all' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'
+          }`}>
+            {tickets.length}
+          </span>
+        </button>
+
+        {departments.map((dept) => {
+          const isSelected = selectedDeptFilter === dept.id.toString();
+          const isUserDept = currentUser?.departmentId === dept.id || dept.name.toLowerCase().includes('dev operation');
+          const count = tickets.filter((t) => t.departmentId === dept.id).length;
+          return (
+            <button
+              key={dept.id}
+              type="button"
+              onClick={() => setSelectedDeptFilter(dept.id.toString())}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                isSelected
+                  ? 'bg-[#13264C] text-white shadow-2xs'
+                  : isUserDept
+                  ? 'bg-blue-50/70 hover:bg-blue-100/60 text-[#13264C] border border-blue-200'
+                  : 'bg-white hover:bg-zinc-100/80 text-zinc-600 border border-zinc-200/80'
+              }`}
+            >
+              <span>{dept.name}</span>
+              {isUserDept && (
+                <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full bg-[#D61766] text-white">
+                  Super Admin
+                </span>
+              )}
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                isSelected ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Content Area: Board or List */}
@@ -441,13 +657,13 @@ export default function TicketQueueView() {
                     const coMembers = getAssignableCoMembers(ticket);
 
                     return (
-                      /* Ticket Card - Strictly non-scrollable, contains ONLY the 6 requested fields */
                       <div
                         key={ticket.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, ticket.id)}
                         onDragEnd={handleDragEnd}
-                        className={`bg-white rounded-xl border border-zinc-200/90 p-3 shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing select-none flex flex-col gap-2 overflow-hidden shrink-0 ${
+                        onClick={() => handleOpenTicketModal(ticket)}
+                        className={`bg-white rounded-xl border border-zinc-200/90 p-3 shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing select-none flex flex-col gap-2.5 overflow-hidden shrink-0 ${
                           isDragging ? 'opacity-35 scale-[0.98] border-dashed border-[#13264C]' : ''
                         }`}
                       >
@@ -514,7 +730,6 @@ export default function TicketQueueView() {
                           </span>
 
                           {canAssign ? (
-                            /* Only department managers can assign to co-members of this specific department */
                             <select
                               value={ticket.assignedToEmployeeId || ''}
                               onChange={(e) => handleAssignTicket(ticket.id, e.target.value)}
@@ -530,7 +745,6 @@ export default function TicketQueueView() {
                               ))}
                             </select>
                           ) : (
-                            /* Regular employee or non-department manager: Clean read-only display */
                             <span
                               className={`text-[11px] truncate max-w-[145px] ${
                                 ticket.assignedToEmployeeName
@@ -572,16 +786,18 @@ export default function TicketQueueView() {
                   : 'No tickets found in the queue.'}
               </div>
             ) : (
-              <table className="w-full text-xs text-left border-collapse min-w-[760px]">
+              <table className="w-full text-xs text-left border-collapse min-w-[880px]">
                 <thead className="bg-zinc-50/90 sticky top-0 border-b border-zinc-200 text-zinc-500 uppercase font-bold text-[10px] tracking-wider z-10">
                   <tr>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Ticket ID</th>
-                    <th className="py-2.5 px-3.5">Ticket Issue</th>
+                    <th className="py-2.5 px-3.5 whitespace-nowrap">Directed Email Desk</th>
+                    <th className="py-2.5 px-3.5">Ticket Issue &amp; Incoming Message</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Raised By</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Department</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Critical Level</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Status</th>
                     <th className="py-2.5 px-3.5 whitespace-nowrap">Assigned Staff</th>
+                    <th className="py-2.5 px-3.5 whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-zinc-800 font-medium">
@@ -597,14 +813,32 @@ export default function TicketQueueView() {
                           #{t.id}
                         </td>
 
-                        {/* 2. Ticket Issue */}
+                        {/* Directed Department Email Desk */}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50/80 border border-blue-200/80 w-fit">
+                            <Mail className="w-3 h-3 text-[#13264C]" />
+                            <span className="font-mono text-[10px] font-bold text-[#13264C]">
+                              {t.departmentSupportEmail || `${(t.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 2. Ticket Issue & Message */}
                         <td className="py-3 px-3.5 max-w-sm">
-                          <span className="font-semibold text-zinc-900">{t.title}</span>
+                          <div className="font-bold text-zinc-900 leading-snug">{t.title}</div>
+                          {t.description && (
+                            <div className="text-[11px] text-zinc-500 line-clamp-1 italic mt-0.5">
+                              &ldquo;{t.description}&rdquo;
+                            </div>
+                          )}
                         </td>
 
                         {/* 3. Person who raised it */}
                         <td className="py-3 px-3.5 text-zinc-700 whitespace-nowrap">
-                          {t.createdByEmployeeName || 'Unknown'}
+                          <div className="font-semibold text-zinc-900">{t.createdByEmployeeName || 'Unknown'}</div>
+                          {t.createdByEmployeeEmail && (
+                            <div className="font-mono text-[10px] text-zinc-400">{t.createdByEmployeeEmail}</div>
+                          )}
                         </td>
 
                         {/* 4. Department */}
@@ -658,7 +892,6 @@ export default function TicketQueueView() {
                         {/* 6. Person assigned by manager */}
                         <td className="py-3 px-3.5 whitespace-nowrap">
                           {canAssign ? (
-                            /* Only department managers can assign to co-members of this specific department */
                             <select
                               value={t.assignedToEmployeeId || ''}
                               onChange={(e) => handleAssignTicket(t.id, e.target.value)}
@@ -673,7 +906,6 @@ export default function TicketQueueView() {
                               ))}
                             </select>
                           ) : (
-                            /* Regular employee or non-department manager: Clean read-only display */
                             <span
                               className={`text-xs ${
                                 t.assignedToEmployeeName
@@ -690,6 +922,18 @@ export default function TicketQueueView() {
                             </span>
                           )}
                         </td>
+
+                        {/* Action: Inspect Message Details */}
+                        <td className="py-3 px-3.5 whitespace-nowrap text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTicketModal(t)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-[#13264C] hover:text-white text-zinc-700 text-[11px] font-bold transition-colors cursor-pointer border border-zinc-200"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View</span>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -699,6 +943,411 @@ export default function TicketQueueView() {
           </div>
         </div>
       )}
+
+      {/* Inbound Email Simulator Modal */}
+      <AnimatePresence>
+        {simulatorOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl border border-zinc-200 shadow-xl max-w-xl w-full p-5 max-h-[90vh] flex flex-col overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-[#13264C]/10 text-[#13264C]">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950 m-0">Inbound Email-to-Ticket Simulator</h3>
+                    <div className="text-[11px] text-zinc-500">
+                      Simulate employee concerns emailed to designated department inboxes
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSimulatorOpen(false); setSimResult(null); setSimError(null); }}
+                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 py-3 flex flex-col gap-3">
+                {/* 1-Click Quick Presets */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-700 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D61766]" />
+                    <span>Quick Test Scenarios (1-Click Fill):</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('it')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">💻 IT Hardware / VPN</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to it-support@company.io</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('hr')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">📋 HR / COE Request</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to hr-support@company.io</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('devops')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">🛠️ DevOps / Deploy</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to gamboa.khinandrei+devops@gmail.com</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('finance')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">💼 Finance / Expense</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to finance-support@company.io</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Success Banner */}
+                {simResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Ticket #{simResult.ticketId} Auto-Created &amp; Routed!</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-800">
+                      <strong>Queue:</strong> {simResult.assignedQueue} &bull; <strong>Department:</strong> {simResult.departmentName}
+                    </div>
+                    <div className="text-[11px] text-emerald-700">
+                      {simResult.confirmationDispatched ? 'Confirmation email dispatched to sender inbox via SMTP.' : 'Simulated confirmation dispatched.'}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Error Banner */}
+                {simError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{simError}</span>
+                  </div>
+                )}
+
+                {/* Simulation Form */}
+                <form onSubmit={handleSimulateInboundEmail} className="flex flex-col gap-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                        Employee Sender Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={simForm.fromName}
+                        onChange={(e) => setSimForm(prev => ({ ...prev, fromName: e.target.value }))}
+                        className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                        Employee Sender Gmail *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={simForm.fromEmail}
+                        onChange={(e) => setSimForm(prev => ({ ...prev, fromEmail: e.target.value }))}
+                        className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                      To Department Support Inbox *
+                    </label>
+                    <select
+                      value={simForm.toEmail}
+                      onChange={(e) => setSimForm(prev => ({ ...prev, toEmail: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C] font-mono font-medium"
+                    >
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.supportEmail || `${d.name.toLowerCase().replace(/ /g, '-')}@company.io`}>
+                          {d.name} ({d.supportEmail || 'auto-route'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                      Email Subject / Issue Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={simForm.subject}
+                      onChange={(e) => setSimForm(prev => ({ ...prev, subject: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                      Email Message / Detailed Concern *
+                    </label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={simForm.body}
+                      onChange={(e) => setSimForm(prev => ({ ...prev, body: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
+                    <button
+                      type="button"
+                      onClick={() => setSimulatorOpen(false)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 cursor-pointer"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={simLoading}
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] cursor-pointer disabled:opacity-50"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{simLoading ? 'Ingesting Email...' : 'Send Inbound Email'}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Ticket Detail & Inbound Message Inspection Modal */}
+      <AnimatePresence>
+        {selectedTicket && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl border border-zinc-200 shadow-xl max-w-2xl w-full p-5 max-h-[90vh] flex flex-col overflow-hidden font-sans"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-zinc-100 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-mono font-bold text-sm text-white bg-[#13264C] px-2.5 py-1 rounded-lg">
+                    #{selectedTicket.id}
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950 m-0">Inbound Message &amp; Ticket Routing</h3>
+                    <div className="text-[11px] text-zinc-500">
+                      Direct email delivery envelope &amp; ticket details
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicket(null)}
+                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer p-1 rounded-lg hover:bg-zinc-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="overflow-y-auto flex-1 py-4 flex flex-col gap-3.5">
+                {/* Routing Envelope Header */}
+                <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/70 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between gap-2 border-b border-blue-100 pb-2">
+                    <div className="flex items-center gap-1.5 text-xs text-[#13264C] font-bold">
+                      <Mail className="w-4 h-4 text-[#13264C]" />
+                      <span>Directed Support Inbox (To):</span>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-[#13264C] bg-white px-2.5 py-0.5 rounded-md border border-blue-200">
+                      {selectedTicket.departmentSupportEmail || `${(selectedTicket.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        From (Sender)
+                      </span>
+                      <div className="font-semibold text-zinc-900 mt-0.5">
+                        {selectedTicket.createdByEmployeeName || 'Unknown Requester'}
+                      </div>
+                      {selectedTicket.createdByEmployeeEmail && (
+                        <div className="font-mono text-[11px] text-zinc-500">
+                          &lt;{selectedTicket.createdByEmployeeEmail}&gt;
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        Assigned Department Desk
+                      </span>
+                      <div className="font-semibold text-zinc-900 mt-0.5">
+                        {selectedTicket.departmentName || 'General Desk'}
+                      </div>
+                      <div className="text-[11px] text-zinc-500">
+                        {selectedTicket.departmentName?.toLowerCase().includes('dev operation')
+                          ? 'Super Admin / DevOps Primary Queue'
+                          : 'Operational Resolver Queue'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-blue-100">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        Date &amp; Time Received
+                      </span>
+                      <span className="font-medium text-zinc-700">
+                        {new Date(selectedTicket.createdAtUtc).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
+                        Priority Level
+                      </span>
+                      <span className="font-bold text-zinc-900">
+                        {selectedTicket.priority || 'Normal'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email Subject / Ticket Issue */}
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1 uppercase tracking-wider">
+                    Subject / Concern Title
+                  </label>
+                  <div className="text-xs font-bold text-zinc-900 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2">
+                    {selectedTicket.title}
+                  </div>
+                </div>
+
+                {/* Inbound Email Body / Full Message */}
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1 uppercase tracking-wider">
+                    Inbound Message Body
+                  </label>
+                  <div className="text-xs text-zinc-800 bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 whitespace-pre-wrap leading-relaxed font-sans max-h-48 overflow-y-auto">
+                    {selectedTicket.description || (
+                      <span className="text-zinc-400 italic">No message body was attached to this ticket.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status & Resolution Section */}
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col gap-3">
+                  <div className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#13264C]" />
+                    <span>Resolver Controls &amp; Status</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-600 mb-1 uppercase tracking-wider">
+                        Queue Column / Status
+                      </label>
+                      <select
+                        value={selectedTicketCol}
+                        onChange={(e) => setSelectedTicketCol(e.target.value)}
+                        className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#13264C]"
+                      >
+                        {COLUMNS.map((col) => (
+                          <option key={col.id} value={col.id}>
+                            {col.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-600 mb-1 uppercase tracking-wider">
+                        Assigned Resolver
+                      </label>
+                      {canUserAssignTicket(selectedTicket) ? (
+                        <select
+                          value={selectedTicketAssigneeId}
+                          onChange={(e) => setSelectedTicketAssigneeId(e.target.value)}
+                          className="w-full text-xs font-medium bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#13264C]"
+                        >
+                          <option value="">Unassigned</option>
+                          {getAssignableCoMembers(selectedTicket).map((emp) => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.fullName}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 truncate">
+                          {selectedTicket.assignedToEmployeeName || 'Unassigned'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 mb-1 uppercase tracking-wider">
+                      Resolution Notes / Resolver Response
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={modalResolutionNotes}
+                      onChange={(e) => setModalResolutionNotes(e.target.value)}
+                      placeholder="Add resolution or troubleshooting notes..."
+                      className="w-full text-xs bg-white border border-zinc-200 rounded-lg p-2 text-zinc-800 focus:outline-none focus:border-[#13264C]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicket(null)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveModalTicket}
+                  disabled={modalSaving}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] cursor-pointer disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{modalSaving ? 'Saving Changes...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

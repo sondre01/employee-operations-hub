@@ -11,7 +11,13 @@ import {
   AlertCircle,
   ShieldCheck,
   Mail,
+  Send,
+  CheckCircle2,
+  Sparkles,
   Eye,
+  Clock,
+  User,
+  Building2,
   Check
 } from 'lucide-react';
 
@@ -33,17 +39,28 @@ export default function TicketQueueView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Department filter state: defaults to all departments for global visibility
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState('all');
+
+  // Inbound Email Simulator state
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [simForm, setSimForm] = useState({
+    fromName: 'Khin Andrei Gamboa',
+    fromEmail: 'gamboa.khinandrei@gmail.com',
+    toEmail: 'it-support@company.io',
+    subject: 'Workstation power supply failure after storm',
+    body: 'Hi IT team, my secondary monitor and desktop power unit will not turn on today. Can an IT specialist check this or issue a temporary replacement unit? Thanks!'
+  });
+  const [simLoading, setSimLoading] = useState(false);
+  const [simResult, setSimResult] = useState(null);
+  const [simError, setSimError] = useState(null);
+
   // Ticket Detail & Message Inspection Modal state
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [selectedTicketCol, setSelectedTicketCol] = useState('Open');
   const [selectedTicketAssigneeId, setSelectedTicketAssigneeId] = useState('');
   const [modalResolutionNotes, setModalResolutionNotes] = useState('');
   const [modalSaving, setModalSaving] = useState(false);
-
-  // Department filter state: defaults to current user's department (Dev Operation for Super Admin)
-  const [selectedDeptFilter, setSelectedDeptFilter] = useState(() => {
-    return currentUser?.departmentId ? currentUser.departmentId.toString() : '1';
-  });
 
   // View state: 'board' | 'list'
   const [viewMode, setViewMode] = useState('board');
@@ -67,9 +84,10 @@ export default function TicketQueueView() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch access employees and departments
+      // Fetch tickets, access employees, and departments
+      const callerParam = currentUser?.id ? `?callerEmployeeId=${currentUser.id}` : '';
       const [ticketList, accessEmpList, deptList] = await Promise.all([
-        apiRequest('/tickets'),
+        apiRequest(`/tickets${callerParam}`),
         apiRequest('/access/employees').catch(() => apiRequest('/employees')),
         apiRequest('/departments').catch(() => []),
       ]);
@@ -77,6 +95,12 @@ export default function TicketQueueView() {
       setTickets(ticketList || []);
       setEmployees((accessEmpList || []).filter((e) => e.isInternal));
       setDepartments(deptList || []);
+      if (deptList?.length > 0 && !simForm.toEmail) {
+        setSimForm((prev) => ({
+          ...prev,
+          toEmail: deptList[0].supportEmail || 'it-support@company.io'
+        }));
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -84,9 +108,72 @@ export default function TicketQueueView() {
     }
   };
 
+  const handleSimulateInboundEmail = async (e) => {
+    e.preventDefault();
+    setSimLoading(true);
+    setSimError(null);
+    setSimResult(null);
+    try {
+      const res = await apiRequest('/tickets/inbound-email', {
+        method: 'POST',
+        body: simForm
+      });
+      setSimResult(res);
+      fetchData(); // Immediately refresh Kanban tickets
+    } catch (err) {
+      setSimError(err.message || 'Failed to process inbound email.');
+    } finally {
+      setSimLoading(false);
+    }
+  };
+
+  const applyPreset = (preset) => {
+    setSimResult(null);
+    setSimError(null);
+    if (preset === 'it') {
+      setSimForm({
+        fromName: 'Khin Andrei Gamboa',
+        fromEmail: 'gamboa.khinandrei@gmail.com',
+        toEmail: 'it-support@company.io',
+        subject: 'VPN Connection drops intermittently on remote shift',
+        body: 'Hello IT team, my OpenVPN client disconnects every 15 minutes during the afternoon sprint. Could you review my routing logs?'
+      });
+    } else if (preset === 'hr') {
+      setSimForm({
+        fromName: 'Jessica Alcantara',
+        fromEmail: 'jessica.alcantara@gmail.com',
+        toEmail: 'hr-support@company.io',
+        subject: 'Request for Certificate of Employment (COE) with Compensation',
+        body: 'Hi HR team, I need a signed Certificate of Employment stating my compensation breakdown for my home loan bank application. Thank you!'
+      });
+    } else if (preset === 'devops') {
+      setSimForm({
+        fromName: 'Bianca Mendoza',
+        fromEmail: 'dev.bianca@company.io',
+        toEmail: 'gamboa.khinandrei+devops@gmail.com',
+        subject: 'Kubernetes staging namespace rollout failure',
+        body: 'Hi Khin Andrei & DevOps team, our latest build helm deployment to staging-alpha failed with CrashLoopBackOff on pod container restart. Please inspect.'
+      });
+    } else if (preset === 'finance') {
+      setSimForm({
+        fromName: 'Arnel Bautista',
+        fromEmail: 'arnel.bautista@gmail.com',
+        toEmail: 'finance-support@company.io',
+        subject: 'Travel allowance reimbursement claim inquiry',
+        body: 'Hi Finance, attached are receipts for client on-site visit expenses last Thursday. Kindly confirm if processing will be included in the upcoming cut-off.'
+      });
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (currentUser?.departmentId) {
+      setSelectedDeptFilter(currentUser.departmentId.toString());
+    }
+  }, [currentUser?.departmentId]);
 
   // Determine which column a ticket belongs to
   const getTicketColumn = (ticket) => {
@@ -431,6 +518,17 @@ export default function TicketQueueView() {
             </button>
           </div>
 
+          {/* Inbound Email Simulator Button */}
+          <button
+            type="button"
+            onClick={() => setSimulatorOpen(true)}
+            title="Simulate employee email to department inbox"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-[#13264C] shadow-2xs cursor-pointer transition-all"
+          >
+            <Mail className="w-3.5 h-3.5 text-[#D61766]" />
+            <span className="hidden sm:inline">Inbound Email Simulator</span>
+          </button>
+
           <button
             type="button"
             onClick={fetchData}
@@ -600,29 +698,10 @@ export default function TicketQueueView() {
                           </span>
                         </div>
 
-                        {/* Directed Department Email Desk */}
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50/70 border border-blue-200/70 rounded-lg text-[10px] text-[#13264C] font-semibold">
-                          <Mail className="w-3 h-3 text-[#13264C]" shrink-0 />
-                          <span className="truncate font-mono" title={ticket.departmentSupportEmail || 'Auto-routed support inbox'}>
-                            To: {ticket.departmentSupportEmail || `${(ticket.departmentName || 'support').toLowerCase().replace(/\s+/g, '-')}@company.io`}
-                          </span>
-                        </div>
-
                         {/* 2. Ticket Issue */}
                         <div className="text-xs font-semibold text-zinc-900 leading-snug line-clamp-2">
                           {ticket.title}
                         </div>
-
-                        {/* Incoming Message Snippet */}
-                        {ticket.description ? (
-                          <div className="text-[11px] text-zinc-600 line-clamp-2 bg-zinc-50 rounded-lg p-2 border border-zinc-200/60 leading-snug font-sans">
-                            &ldquo;{ticket.description}&rdquo;
-                          </div>
-                        ) : (
-                          <div className="text-[10px] text-zinc-400 italic">
-                            No message body provided.
-                          </div>
-                        )}
 
                         {/* 3. Person who raised it & 4. Department */}
                         <div className="flex flex-col gap-1 text-[11px] font-medium text-zinc-500">
@@ -630,15 +709,10 @@ export default function TicketQueueView() {
                             <span className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
                               Raised By
                             </span>
-                            <span className="text-zinc-700 font-semibold truncate max-w-[140px]" title={ticket.createdByEmployeeEmail || ''}>
+                            <span className="text-zinc-700 font-semibold truncate max-w-[140px]">
                               {ticket.createdByEmployeeName || 'Unknown'}
                             </span>
                           </div>
-                          {ticket.createdByEmployeeEmail && (
-                            <div className="text-[10px] text-zinc-400 font-mono text-right truncate">
-                              {ticket.createdByEmployeeEmail}
-                            </div>
-                          )}
                           <div className="flex items-center justify-between gap-1">
                             <span className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
                               Department
@@ -687,19 +761,6 @@ export default function TicketQueueView() {
                             </span>
                           )}
                         </div>
-
-                        {/* Inspect Message Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenTicketModal(ticket);
-                          }}
-                          className="w-full mt-0.5 py-1.5 px-2 rounded-lg bg-zinc-50 hover:bg-[#13264C] hover:text-white border border-zinc-200 text-zinc-700 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Inspect Email &amp; Message</span>
-                        </button>
                       </div>
                     );
                   })}
@@ -882,6 +943,205 @@ export default function TicketQueueView() {
           </div>
         </div>
       )}
+
+      {/* Inbound Email Simulator Modal */}
+      <AnimatePresence>
+        {simulatorOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl border border-zinc-200 shadow-xl max-w-xl w-full p-5 max-h-[90vh] flex flex-col overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-[#13264C]/10 text-[#13264C]">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950 m-0">Inbound Email-to-Ticket Simulator</h3>
+                    <div className="text-[11px] text-zinc-500">
+                      Simulate employee concerns emailed to designated department inboxes
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSimulatorOpen(false); setSimResult(null); setSimError(null); }}
+                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 py-3 flex flex-col gap-3">
+                {/* 1-Click Quick Presets */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-700 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D61766]" />
+                    <span>Quick Test Scenarios (1-Click Fill):</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('it')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">💻 IT Hardware / VPN</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to it-support@company.io</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('hr')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">📋 HR / COE Request</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to hr-support@company.io</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('devops')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">🛠️ DevOps / Deploy</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to gamboa.khinandrei+devops@gmail.com</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('finance')}
+                      className="p-2 rounded-xl text-left border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-[#13264C] transition-all cursor-pointer"
+                    >
+                      <div className="font-bold text-zinc-900">💼 Finance / Expense</div>
+                      <div className="text-[10px] text-zinc-500 truncate">to finance-support@company.io</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Success Banner */}
+                {simResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Ticket #{simResult.ticketId} Auto-Created &amp; Routed!</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-800">
+                      <strong>Queue:</strong> {simResult.assignedQueue} &bull; <strong>Department:</strong> {simResult.departmentName}
+                    </div>
+                    <div className="text-[11px] text-emerald-700">
+                      {simResult.confirmationDispatched ? 'Confirmation email dispatched to sender inbox via SMTP.' : 'Simulated confirmation dispatched.'}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Error Banner */}
+                {simError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{simError}</span>
+                  </div>
+                )}
+
+                {/* Simulation Form */}
+                <form onSubmit={handleSimulateInboundEmail} className="flex flex-col gap-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                        Employee Sender Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={simForm.fromName}
+                        onChange={(e) => setSimForm(prev => ({ ...prev, fromName: e.target.value }))}
+                        className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                        Employee Sender Gmail *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={simForm.fromEmail}
+                        onChange={(e) => setSimForm(prev => ({ ...prev, fromEmail: e.target.value }))}
+                        className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                      To Department Support Inbox *
+                    </label>
+                    <select
+                      value={simForm.toEmail}
+                      onChange={(e) => setSimForm(prev => ({ ...prev, toEmail: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C] font-mono font-medium"
+                    >
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.supportEmail || `${d.name.toLowerCase().replace(/ /g, '-')}@company.io`}>
+                          {d.name} ({d.supportEmail || 'auto-route'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                      Email Subject / Issue Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={simForm.subject}
+                      onChange={(e) => setSimForm(prev => ({ ...prev, subject: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                      Email Message / Detailed Concern *
+                    </label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={simForm.body}
+                      onChange={(e) => setSimForm(prev => ({ ...prev, body: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#13264C]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
+                    <button
+                      type="button"
+                      onClick={() => setSimulatorOpen(false)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-700 hover:bg-zinc-100 cursor-pointer"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={simLoading}
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-[#13264C] hover:bg-[#0E1D3B] cursor-pointer disabled:opacity-50"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{simLoading ? 'Ingesting Email...' : 'Send Inbound Email'}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Ticket Detail & Inbound Message Inspection Modal */}
       <AnimatePresence>

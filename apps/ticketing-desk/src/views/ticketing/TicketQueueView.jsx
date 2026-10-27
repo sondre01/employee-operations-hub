@@ -39,10 +39,8 @@ export default function TicketQueueView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Department filter state: defaults to current user's department (Dev Operation for Super Admin)
-  const [selectedDeptFilter, setSelectedDeptFilter] = useState(() => {
-    return currentUser?.departmentId ? currentUser.departmentId.toString() : '1';
-  });
+  // Department filter state: defaults to all departments for global visibility
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState('all');
 
   // Inbound Email Simulator state
   const [simulatorOpen, setSimulatorOpen] = useState(false);

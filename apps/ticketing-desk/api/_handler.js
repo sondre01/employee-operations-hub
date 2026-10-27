@@ -399,22 +399,20 @@ export default async function handler(req, res) {
       const conditions = [];
       const values = [];
 
-      // Caller isolation
+      // Caller isolation: External / non-ticketing staff can only see their own tickets
       if (query.callerEmployeeId) {
         const callerId = safeInt(query.callerEmployeeId);
         if (callerId !== null) {
           const callerRes = await pool.query(`SELECT * FROM employee_hub."Employees" WHERE "Id" = $1`, [callerId]);
           if (callerRes.rows.length > 0) {
             const caller = callerRes.rows[0];
-            const isSuperAdmin = (caller.WorkEmail || '').toLowerCase().trim() === 'gamboa.khinandrei@gmail.com' || caller.TicketingRole === 1;
-            if (!isSuperAdmin) {
-              if (caller.DepartmentId) {
-                values.push(caller.DepartmentId);
-                conditions.push(`t."DepartmentId" = $${values.length}`);
-              } else {
-                values.push(caller.Id);
-                conditions.push(`(t."CreatedByEmployeeId" = $${values.length} OR t."AssignedToEmployeeId" = $${values.length})`);
-              }
+            const isSuperOrDevOps = (caller.WorkEmail || '').toLowerCase().trim() === 'gamboa.khinandrei@gmail.com' ||
+                                    caller.TicketingRole === 1 ||
+                                    caller.TicketingRole === 2;
+            const hasDeskAccess = isSuperOrDevOps || Boolean(caller.HasTicketingAccess) || (caller.TicketingRole && caller.TicketingRole > 0);
+            if (!hasDeskAccess) {
+              values.push(caller.Id);
+              conditions.push(`(t."CreatedByEmployeeId" = $${values.length} OR t."AssignedToEmployeeId" = $${values.length})`);
             }
           }
         }
@@ -561,7 +559,7 @@ export default async function handler(req, res) {
 
     // PATCH /tickets/:id/status
     const statusMatch = pathname.match(/^\/tickets\/(\d+)\/status$/);
-    if (statusMatch && method === 'PATCH') {
+    if (statusMatch && (method === 'PATCH' || method === 'PUT')) {
       const id = safeInt(statusMatch[1]);
       const body = await parseBody(req);
       const sVal = STATUS_NUM[body.status] || safeInt(body.status, 1);
@@ -620,7 +618,7 @@ export default async function handler(req, res) {
 
     // PATCH /tickets/:id/assign
     const assignMatch = pathname.match(/^\/tickets\/(\d+)\/assign$/);
-    if (assignMatch && method === 'PATCH') {
+    if (assignMatch && (method === 'PATCH' || method === 'PUT')) {
       const id = safeInt(assignMatch[1]);
       const body = await parseBody(req);
       const resolverId = safeInt(body.assignedToEmployeeId);
@@ -862,7 +860,7 @@ export default async function handler(req, res) {
     // ==========================================
     // 4. ACCESS CONTROL ENDPOINTS
     // ==========================================
-    if (pathname === '/access/employees' && method === 'GET') {
+    if ((pathname === '/access' || pathname === '/access/employees') && method === 'GET') {
       const sql = `
         SELECT 
           e."Id" AS id,
@@ -892,7 +890,7 @@ export default async function handler(req, res) {
     }
 
     const accessMatch = pathname.match(/^\/access\/(\d+)$/);
-    if (accessMatch && method === 'PATCH') {
+    if (accessMatch && (method === 'PATCH' || method === 'PUT')) {
       const id = safeInt(accessMatch[1]);
       const body = await parseBody(req);
       const tRole = TICKETING_ROLE_NUM[body.ticketingRole] !== undefined
@@ -975,6 +973,74 @@ export default async function handler(req, res) {
         lastName: r.lastName || '',
         createdAtUtc: new Date(r.createdAtUtc).toISOString()
       })));
+    }
+
+    if (pathname === '/employees' && method === 'POST') {
+      const body = await parseBody(req);
+      const email = (body.workEmail || '').trim().toLowerCase();
+      const fullName = (body.fullName || `${body.firstName || ''} ${body.lastName || ''}`).trim();
+      const password = body.password || 'Password123!';
+      const salt = crypto.randomBytes(16);
+      const hash = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+      const passwordHash = `${salt.toString('base64')}:${hash.toString('base64')}`;
+
+      const empType = EMPLOYMENT_TYPE_NUM[body.employmentType] || 2;
+      const userRole = USER_ROLE_NUM[body.role] || 3;
+
+      const insRes = await pool.query(`
+        INSERT INTO employee_hub."Employees" (
+          "FullName", "WorkEmail", "JobTitle", "EmploymentType", "Role",
+          "ClientName", "PrimaryTechStack", "IsActive", "CreatedAtUtc",
+          "CanAssignEmployees", "DepartmentId", "FirstName", "HasTicketingAccess",
+          "IsInternal", "LastName", "MiddleName", "PasswordHash", "TicketingRole"
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          $6, $7, true, NOW(),
+          false, NULL, $8, false,
+          false, $9, $10, $11, 0
+        ) RETURNING *
+      `, [
+        fullName,
+        email,
+        body.jobTitle || 'Developer',
+        empType,
+        userRole,
+        body.clientName || '',
+        body.primaryTechStack || '',
+        body.firstName || '',
+        body.lastName || '',
+        body.middleName || '',
+        passwordHash
+      ]);
+
+      const emp = insRes.rows[0];
+      return sendJson(res, 201, {
+        id: emp.Id,
+        fullName: emp.FullName,
+        workEmail: emp.WorkEmail,
+        jobTitle: emp.JobTitle,
+        employmentType: EMPLOYMENT_TYPE_STR[emp.EmploymentType] || 'ClientDedicated',
+        role: USER_ROLE_STR[emp.Role] || 'Developer',
+        clientName: emp.ClientName || null,
+        primaryTechStack: emp.PrimaryTechStack || '',
+        isActive: Boolean(emp.IsActive),
+        createdAtUtc: new Date(emp.CreatedAtUtc).toISOString(),
+        firstName: emp.FirstName || '',
+        middleName: emp.MiddleName || '',
+        lastName: emp.LastName || ''
+      });
+    }
+
+    const empMatch = pathname.match(/^\/employees\/(\d+)$/);
+    if (empMatch && method === 'DELETE') {
+      const id = safeInt(empMatch[1]);
+      await pool.query(`DELETE FROM employee_hub."PolicyAcknowledgements" WHERE "EmployeeId" = $1`, [id]);
+      await pool.query(`DELETE FROM employee_hub."HardwareItems" WHERE "EmployeeId" = $1`, [id]);
+      await pool.query(`UPDATE employee_hub."Tickets" SET "CreatedByEmployeeId" = NULL WHERE "CreatedByEmployeeId" = $1`, [id]);
+      await pool.query(`UPDATE employee_hub."Tickets" SET "AssignedToEmployeeId" = NULL WHERE "AssignedToEmployeeId" = $1`, [id]);
+      await pool.query(`DELETE FROM employee_hub."Employees" WHERE "Id" = $1`, [id]);
+      res.statusCode = 204;
+      return res.end();
     }
 
     const empDetailMatch = pathname.match(/^\/employees\/(\d+)$/);
@@ -1155,6 +1221,32 @@ export default async function handler(req, res) {
         ...p,
         publishedAtUtc: new Date(p.publishedAtUtc).toISOString()
       })));
+    }
+
+    if (pathname === '/policies' && method === 'POST') {
+      const body = await parseBody(req);
+      const insRes = await pool.query(`
+        INSERT INTO employee_hub."PolicyDocuments" (
+          "Title", "Version", "SummaryMarkdown", "IsMandatory", "PublishedAtUtc"
+        ) VALUES ($1, $2, $3, $4, NOW())
+        RETURNING *
+      `, [
+        body.title || 'Untitled Policy',
+        body.version || '1.0',
+        body.summaryMarkdown || '',
+        body.isMandatory !== undefined ? Boolean(body.isMandatory) : true
+      ]);
+      const pol = insRes.rows[0];
+      return sendJson(res, 201, {
+        id: pol.Id,
+        title: pol.Title,
+        version: pol.Version,
+        summaryMarkdown: pol.SummaryMarkdown,
+        isMandatory: pol.IsMandatory,
+        publishedAtUtc: new Date(pol.PublishedAtUtc).toISOString(),
+        totalAcknowledgements: 0,
+        isAcknowledgedByCurrentEmployee: false
+      });
     }
 
     const ackMatch = pathname.match(/^\/policies\/(\d+)\/acknowledge$/);

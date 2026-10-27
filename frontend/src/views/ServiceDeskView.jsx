@@ -3,7 +3,7 @@ import { apiRequest } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 export default function ServiceDeskView() {
-  const { currentPersona } = useAuth();
+  const { currentUser, currentPersona } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,6 +31,7 @@ export default function ServiceDeskView() {
       const params = new URLSearchParams();
       if (queueFilter) params.append('queue', queueFilter);
       if (statusFilter) params.append('status', statusFilter);
+      if (currentUser?.id) params.append('callerEmployeeId', currentUser.id);
 
       const query = params.toString() ? `?${params.toString()}` : '';
       const data = await apiRequest(`/tickets${query}`);
@@ -44,7 +45,7 @@ export default function ServiceDeskView() {
 
   useEffect(() => {
     fetchTickets();
-  }, [queueFilter, statusFilter]);
+  }, [queueFilter, statusFilter, currentUser?.id]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;

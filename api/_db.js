@@ -53,8 +53,16 @@ function getDbConfig() {
 
   // Check individual environment variables (Vercel Postgres / standard PG)
   if (!raw && (process.env.POSTGRES_HOST || process.env.PGHOST)) {
+    const host = (process.env.POSTGRES_HOST || process.env.PGHOST || '').trim();
+    if (host.includes('aws-0-') && !host.includes('aws-0-ap-northeast-1.pooler.supabase.com')) {
+      console.warn('Detected truncated POSTGRES_HOST in environment, falling back to verified pooler URL.');
+      return {
+        connectionString: DEFAULT_SUPABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      };
+    }
     return {
-      host: process.env.POSTGRES_HOST || process.env.PGHOST,
+      host: host,
       port: parseInt(process.env.POSTGRES_PORT || process.env.PGPORT || '5432', 10),
       database: process.env.POSTGRES_DATABASE || process.env.PGDATABASE || 'postgres',
       user: process.env.POSTGRES_USER || process.env.PGUSER,

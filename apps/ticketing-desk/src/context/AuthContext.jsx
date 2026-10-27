@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 function getApiBase() {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (typeof window !== 'undefined') {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (envUrl) {
-      if (envUrl.includes('localhost') && !isLocalhost) {
-        return '/api';
-      }
-      return envUrl.replace(/\/+$/, '');
+    if (!isLocalhost) {
+      return '/api';
     }
     if (window.location.port === '5500') {
       return 'http://localhost:5000/api';
     }
   }
-  return envUrl ? envUrl.replace(/\/+$/, '') : '/api';
+  const envUrl = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_API_BASE_URL : null;
+  if (envUrl && !envUrl.includes('your-') && !envUrl.includes('localhost')) {
+    return envUrl.replace(/\/+$/, '');
+  }
+  return '/api';
 }
 
 const API_BASE = getApiBase();
@@ -321,12 +321,43 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('ops_hub_user');
   };
 
-  // RBAC flags
-  const isSuperAdmin = currentUser?.ticketingRole === 'SuperAdmin';
-  const isDevOpsAdmin = currentUser?.ticketingRole === 'DevOpsAdmin' || isSuperAdmin;
-  const isDepartmentManager = currentUser?.ticketingRole === 'DepartmentManager';
-  const hasTicketingAccess = Boolean(currentUser?.hasTicketingAccess || isSuperAdmin);
-  const canAssignEmployees = Boolean(currentUser?.canAssignEmployees || isSuperAdmin);
+  // RBAC flags (handles string, integer, and administrator email fallback)
+  const normalizedEmail = (currentUser?.workEmail || '').toLowerCase().trim();
+  const isOwnerEmail = normalizedEmail === 'gamboa.khinandrei@gmail.com';
+  const roleVal = currentUser?.ticketingRole;
+  const isSuperAdmin = Boolean(
+    isOwnerEmail ||
+    roleVal === 'SuperAdmin' ||
+    roleVal === 1 ||
+    roleVal === '1'
+  );
+  const isDevOpsAdmin = Boolean(
+    isSuperAdmin ||
+    roleVal === 'DevOpsAdmin' ||
+    roleVal === 2 ||
+    roleVal === '2'
+  );
+  const isDepartmentManager = Boolean(
+    isDevOpsAdmin ||
+    roleVal === 'DepartmentManager' ||
+    roleVal === 3 ||
+    roleVal === '3'
+  );
+  const hasTicketingAccess = Boolean(
+    isSuperAdmin ||
+    isDevOpsAdmin ||
+    isDepartmentManager ||
+    currentUser?.hasTicketingAccess ||
+    roleVal === 'DepartmentMember' ||
+    roleVal === 'Agent' ||
+    roleVal === 4 ||
+    roleVal === '4'
+  );
+  const canAssignEmployees = Boolean(
+    isSuperAdmin ||
+    isDevOpsAdmin ||
+    currentUser?.canAssignEmployees
+  );
 
   // Backward compatibility alias for older views expecting `currentPersona`
   const currentPersona = currentUser
